@@ -43,8 +43,8 @@ export class BuffOfferView {
       card.innerHTML = `
         <div class="boon-card__name">${boon.name}</div>
         <div class="boon-card__epithet">${boon.epithet || ""}</div>
-        <div class="boon-card__blessing">${blessing}: ${BuffOfferView.#effectsToText(boon.benefits, locale)}</div>
-        <div class="boon-card__curse">${curse}: ${BuffOfferView.#effectsToText(boon.drawbacks, locale)}</div>
+        <div class="boon-card__blessing">${blessing}: ${BuffOfferView.#effectsToText(boon.benefits, locale, textVm)}</div>
+        <div class="boon-card__curse">${curse}: ${BuffOfferView.#effectsToText(boon.drawbacks, locale, textVm)}</div>
         <div class="boon-card__corruption">${corruption} +${Math.round(boon.corruptionDelta || 0)}%</div>
       `;
 
@@ -70,43 +70,76 @@ export class BuffOfferView {
     for (const card of cards) card.disabled = disabled;
   }
 
-  static #effectsToText(effects, locale) {
-    if (!Array.isArray(effects) || effects.length === 0) return "None";
+  static #effectsToText(effects, locale, textVm) {
+    if (!Array.isArray(effects) || effects.length === 0) return textVm.none || "None";
     return effects
-      .map((effect) => BuffOfferView.#effectToText(effect, locale))
+      .map((effect) => BuffOfferView.#effectToText(effect, locale, textVm))
       .filter((text) => text.length > 0)
       .join(" | ");
   }
 
-  static #effectToText(effect, locale) {
+  static #effectToText(effect, locale, textVm) {
     if (!effect || typeof effect !== "object") return "";
     const value = Number.isFinite(effect.value) ? effect.value : 0;
     const pct = Math.round(value * 100);
     const vi = locale === "vi";
+    const fx = textVm && textVm.effects && typeof textVm.effects === "object" ? textVm.effects : {};
+    const action = effect.actionType || (vi ? "hanh dong" : "specific");
 
     switch (effect.type) {
       case "DAMAGE_RAW_ADD":
-        return vi ? `+${pct}% sat thuong tong` : `+${pct}% all damage`;
+        return BuffOfferView.#tpl(fx.damageRawAdd, { pct }, vi ? `+${pct}% sat thuong tong` : `+${pct}% all damage`);
       case "ACTION_TYPE_DAMAGE_RAW_ADD":
-        return vi
-          ? `+${pct}% sat thuong ${effect.actionType || "theo hanh dong"}`
-          : `+${pct}% ${effect.actionType || "specific"} damage`;
+        return BuffOfferView.#tpl(
+          fx.actionTypeDamageRawAdd,
+          { pct, action },
+          vi ? `+${pct}% sat thuong ${action}` : `+${pct}% ${action} damage`,
+        );
       case "RAGE_GAIN_MULTIPLIER_ADD":
-        return vi ? `cuong no tang nhanh hon ${pct}%` : `rage grows ${pct}% faster`;
+        return BuffOfferView.#tpl(
+          fx.rageGainMultiplierAdd,
+          { pct },
+          vi ? `cuong no tang nhanh hon ${pct}%` : `rage grows ${pct}% faster`,
+        );
       case "COMBO_BREAK_HOURS_CAP":
-        return vi ? `combo dut sau ${effect.value}h` : `combo breaks after ${effect.value}h`;
+        return BuffOfferView.#tpl(
+          fx.comboBreakHoursCap,
+          { hours: effect.value },
+          vi ? `combo dut sau ${effect.value}h` : `combo breaks after ${effect.value}h`,
+        );
       case "PERMANENT_BOSS_HP_REDUCTION_ADD":
-        return vi ? `HP boss -${pct}% vinh vien` : `boss HP -${pct}% permanently`;
+        return BuffOfferView.#tpl(
+          fx.permanentBossHpReductionAdd,
+          { pct },
+          vi ? `HP boss -${pct}% vinh vien` : `boss HP -${pct}% permanently`,
+        );
       case "LOSE_BOONS_ON_FAIL":
-        return vi ? "that bai se mat toan bo phuc an" : "run fail purges all boons";
+        return BuffOfferView.#tpl(
+          fx.loseBoonsOnFail,
+          {},
+          vi ? "that bai se mat toan bo phuc an" : "run fail purges all boons",
+        );
       case "CRIT_CHANCE_ADD":
-        return vi ? `+${pct}% ti le crit` : `+${pct}% crit chance`;
+        return BuffOfferView.#tpl(fx.critChanceAdd, { pct }, vi ? `+${pct}% ti le crit` : `+${pct}% crit chance`);
       case "CRIT_MULTIPLIER_ADD":
-        return vi ? `+${pct}% sat thuong crit` : `+${pct}% crit multiplier`;
+        return BuffOfferView.#tpl(
+          fx.critMultiplierAdd,
+          { pct },
+          vi ? `+${pct}% sat thuong crit` : `+${pct}% crit multiplier`,
+        );
       case "XP_RAW_ADD":
-        return vi ? `+${pct}% XP` : `+${pct}% XP`;
+        return BuffOfferView.#tpl(fx.xpRawAdd, { pct }, `+${pct}% XP`);
       default:
         return effect.type;
     }
+  }
+
+  static #tpl(template, values, fallback) {
+    if (typeof template !== "string" || template.length === 0) return fallback;
+    let out = template;
+    for (const [key, raw] of Object.entries(values || {})) {
+      out = out.replace(`{${key}}`, String(raw));
+    }
+    return out;
   }
 }

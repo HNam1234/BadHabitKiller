@@ -31,6 +31,7 @@ export class RunStatusView {
     const boss = state.boss;
     const statusText = state.ui && state.ui.statusPanel ? state.ui.statusPanel : {};
     const bossText = state.ui && state.ui.boss ? state.ui.boss : {};
+    const failReason = RunStatusView.#resolveFailReason(run.failedReason, statusText);
 
     this.#statusEl.textContent = run.status === "FAILED"
       ? statusText.failed || "FAILED"
@@ -42,7 +43,15 @@ export class RunStatusView {
     this.#resistanceEl.textContent = `${Math.round((boss.resistanceRate || 0) * 100)}%`;
     this.#comboEl.textContent = `${run.comboCount}`;
     this.#failEl.textContent = run.status === "FAILED"
-      ? (run.failedReason || statusText.failed || "Run Failed")
+      ? failReason
       : statusText.noFailure || "No failure";
+  }
+
+  static #resolveFailReason(reasonCode, statusText) {
+    if (reasonCode === "RAGE_OVERFLOW") {
+      return statusText.rageOverflow || "Rage reached 100%";
+    }
+    if (typeof reasonCode === "string" && reasonCode.length > 0) return reasonCode;
+    return statusText.failed || "Run Failed";
   }
 }

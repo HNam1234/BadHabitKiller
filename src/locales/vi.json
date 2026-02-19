@@ -41,19 +41,32 @@
     "failCause": "Thất bại",
     "active": "ĐANG CHIẾN",
     "failed": "THẤT BẠI",
-    "noFailure": "Không"
+    "noFailure": "Không",
+    "rageOverflow": "Cuồng nộ đạt 100%"
   },
   "boons": {
     "emptyTitle": "Chưa có phúc ấn",
     "emptyHint": "Hạ boss tier để nhận phúc ấn.",
     "additionalTitle": "Phúc Ấn Phụ",
     "additionalHint": "Còn +{count} phúc ấn đang hoạt động.",
+    "none": "Không",
     "blessing": "Phúc",
     "curse": "Nguy",
     "corruption": "Tha hóa",
     "offerTitle": "Chọn Giao Ước",
     "offerIdleHint": "Hạ một tier để mở phòng phúc ấn.",
-    "offerChooseHint": "Chọn 1 giao ước. Cái giá là bắt buộc."
+    "offerChooseHint": "Chọn 1 giao ước. Cái giá là bắt buộc.",
+    "effects": {
+      "damageRawAdd": "+{pct}% sát thương tổng",
+      "actionTypeDamageRawAdd": "+{pct}% sát thương {action}",
+      "rageGainMultiplierAdd": "cuồng nộ tăng nhanh hơn {pct}%",
+      "comboBreakHoursCap": "combo đứt sau {hours}h",
+      "permanentBossHpReductionAdd": "HP boss -{pct}% vĩnh viễn",
+      "loseBoonsOnFail": "thất bại sẽ mất toàn bộ phúc ấn",
+      "critChanceAdd": "+{pct}% tỉ lệ crit",
+      "critMultiplierAdd": "+{pct}% sát thương crit",
+      "xpRawAdd": "+{pct}% XP"
+    }
   },
   "actions": {
     "WORK": {
@@ -126,6 +139,9 @@
     "loading": "Đang tải...",
     "error": "Lỗi",
     "langToggle": "EN",
-    "langToggleAria": "Đổi ngôn ngữ"
+    "langToggleAria": "Đổi ngôn ngữ",
+    "permDamageShort": "SATTH",
+    "bossHpShort": "HPBoss",
+    "graceShort": "BaoHo"
   }
 }

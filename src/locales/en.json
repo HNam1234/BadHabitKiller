@@ -41,19 +41,32 @@
     "failCause": "Fail",
     "active": "ACTIVE",
     "failed": "FAILED",
-    "noFailure": "None"
+    "noFailure": "None",
+    "rageOverflow": "Rage reached 100%"
   },
   "boons": {
     "emptyTitle": "No active boons",
     "emptyHint": "Defeat a tier to invoke one.",
     "additionalTitle": "Additional Pacts",
     "additionalHint": "+{count} more boons are active this run.",
+    "none": "None",
     "blessing": "Blessing",
     "curse": "Curse",
     "corruption": "Corruption",
     "offerTitle": "Choose Your Pact",
     "offerIdleHint": "Defeat the entity tier to invoke a boon.",
-    "offerChooseHint": "Choose one pact. The curse is mandatory."
+    "offerChooseHint": "Choose one pact. The curse is mandatory.",
+    "effects": {
+      "damageRawAdd": "+{pct}% all damage",
+      "actionTypeDamageRawAdd": "+{pct}% {action} damage",
+      "rageGainMultiplierAdd": "rage grows {pct}% faster",
+      "comboBreakHoursCap": "combo breaks after {hours}h",
+      "permanentBossHpReductionAdd": "boss HP -{pct}% permanently",
+      "loseBoonsOnFail": "run fail purges all boons",
+      "critChanceAdd": "+{pct}% crit chance",
+      "critMultiplierAdd": "+{pct}% crit multiplier",
+      "xpRawAdd": "+{pct}% XP"
+    }
   },
   "actions": {
     "WORK": {
@@ -126,6 +139,9 @@
     "loading": "Loading...",
     "error": "Error",
     "langToggle": "VI",
-    "langToggleAria": "Switch language"
+    "langToggleAria": "Switch language",
+    "permDamageShort": "DMG",
+    "bossHpShort": "BossHP",
+    "graceShort": "Grace"
   }
 }

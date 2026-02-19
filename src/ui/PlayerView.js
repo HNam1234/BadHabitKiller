@@ -20,7 +20,7 @@ export class PlayerView {
     this.#formatter = formatter;
   }
 
-  render(playerVm) {
+  render(playerVm, miscVm = {}) {
     this.#levelEl.textContent = String(playerVm.level || 1);
 
     const xp = Number.isFinite(playerVm.xp) ? playerVm.xp : 0;
@@ -38,7 +38,10 @@ export class PlayerView {
       const streakGraceCharges = Number.isFinite(playerVm.streakGraceCharges) ? playerVm.streakGraceCharges : 0;
       const damagePercent = Math.round(permanentDamageMultiplier * 100);
       const bossReductionPercent = Math.round(permanentBossHpReduction * 100);
-      this.#metaTextEl.textContent = `Permanent +${damagePercent}% dmg | Boss HP -${bossReductionPercent}% | Grace ${streakGraceCharges}`;
+      const dmgLabel = typeof miscVm.permDamageShort === "string" ? miscVm.permDamageShort : "DMG";
+      const bossLabel = typeof miscVm.bossHpShort === "string" ? miscVm.bossHpShort : "BossHP";
+      const graceLabel = typeof miscVm.graceShort === "string" ? miscVm.graceShort : "Grace";
+      this.#metaTextEl.textContent = `${dmgLabel} +${damagePercent}% | ${bossLabel} -${bossReductionPercent}% | ${graceLabel} ${streakGraceCharges}`;
     }
   }
 
