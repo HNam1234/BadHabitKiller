@@ -1,0 +1,131 @@
+﻿{
+  "locale": "en",
+  "meta": {
+    "title": "Debt Boss",
+    "subtitle": "One ritual each day. No retreat. No farming."
+  },
+  "header": {
+    "run": "Run",
+    "shards": "Shards",
+    "level": "Level",
+    "streak": "Streak",
+    "status": "Status"
+  },
+  "layout": {
+    "upgradeTree": "Upgrade Tree",
+    "runStatus": "Run Status",
+    "ascension": "Ascension",
+    "activeBoons": "Active Boons",
+    "boonNote": "Boon chamber appears after each tier defeat.",
+    "actions": "Action Rituals"
+  },
+  "boss": {
+    "name": "Shadow Titan",
+    "essence": "Essence",
+    "rage": "Rage",
+    "corruption": "Corruption",
+    "phase": "Phase",
+    "hpUnit": "HP",
+    "tipActive": "Strike with discipline. Rage and corruption are watching.",
+    "tipChooseBoon": "Choose one boon to continue.",
+    "tipFailed": "The Entity Endures. Return tomorrow."
+  },
+  "statusPanel": {
+    "status": "Status",
+    "tier": "Tier",
+    "phase": "Phase",
+    "rage": "Rage",
+    "corruption": "Corruption",
+    "resistance": "Resistance",
+    "combo": "Combo",
+    "failCause": "Fail",
+    "active": "ACTIVE",
+    "failed": "FAILED",
+    "noFailure": "None"
+  },
+  "boons": {
+    "emptyTitle": "No active boons",
+    "emptyHint": "Defeat a tier to invoke one.",
+    "additionalTitle": "Additional Pacts",
+    "additionalHint": "+{count} more boons are active this run.",
+    "blessing": "Blessing",
+    "curse": "Curse",
+    "corruption": "Corruption",
+    "offerTitle": "Choose Your Pact",
+    "offerIdleHint": "Defeat the entity tier to invoke a boon.",
+    "offerChooseHint": "Choose one pact. The curse is mandatory."
+  },
+  "actions": {
+    "WORK": {
+      "label": "Worked Today",
+      "hint": "Heavy overhead slash"
+    },
+    "DEEP_WORK": {
+      "label": "30 min Deep Work",
+      "hint": "Precision thrust with white glow"
+    },
+    "NO_SUGAR": {
+      "label": "No Sugary Drink",
+      "hint": "Clean energy beam strike"
+    },
+    "WALK": {
+      "label": "20 min Walk",
+      "hint": "Wind arc slash"
+    }
+  },
+  "upgradePaths": {
+    "DISCIPLINE": "Discipline",
+    "INTENSITY": "Intensity",
+    "STRATEGY": "Strategy"
+  },
+  "tutorial": {
+    "title": "Ritual Guide",
+    "replay": "Replay Tutorial",
+    "skip": "Skip",
+    "prev": "Back",
+    "next": "Next",
+    "done": "Begin Run",
+    "stepFormat": "Step {current}/{total}",
+    "steps": [
+      "This is the Boss. Reduce its HP to advance tiers.",
+      "These are Action Rituals. Real-world actions deal damage.",
+      "Rage increases if you repeat actions too much.",
+      "Defeat bosses to gain Boons."
+    ]
+  },
+  "fail": {
+    "title": "THE ENTITY ENDURES",
+    "subtitle": "Run Failed."
+  },
+  "cinematic": {
+    "phaseChange": "THE ENTITY AWAKENS",
+    "runFail": "THE ENTITY ENDURES",
+    "boonChosen": "PACT SEALED",
+    "upgrade": "NEW POWER AWAKENED",
+    "runReset": "A NEW RITUAL BEGINS"
+  },
+  "toasts": {
+    "levelUp": "Level Up",
+    "tierBroken": "Tier Broken",
+    "runFailed": "Run Failed",
+    "boonInvoked": "Boon Invoked",
+    "nodeAwakened": "Node Awakened",
+    "sigilRevealed": "Sigil Revealed",
+    "structuralWeakness": "Structural Weakness",
+    "rageSurges": "Rage Surges",
+    "boonChamber": "Boon Chamber",
+    "choosePact": "Choose your pact.",
+    "noRetry": "No retries today.",
+    "permBossHpReduced": "Permanent boss HP reduced."
+  },
+  "misc": {
+    "runIndicatorPrefix": "Run",
+    "lockedFailed": "Run already failed for today. No retries.",
+    "lockedBoon": "Choose one boon before acting.",
+    "ready": "Ready",
+    "loading": "Loading...",
+    "error": "Error",
+    "langToggle": "VI",
+    "langToggleAria": "Switch language"
+  }
+}

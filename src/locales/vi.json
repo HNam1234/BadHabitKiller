@@ -1,0 +1,131 @@
+﻿{
+  "locale": "vi",
+  "meta": {
+    "title": "Trận Chiến Nợ",
+    "subtitle": "Mỗi ngày một nghi thức. Không lùi bước. Không cày farm."
+  },
+  "header": {
+    "run": "Lượt hôm nay",
+    "shards": "Mảnh Ấn",
+    "level": "Cấp",
+    "streak": "Chuỗi",
+    "status": "Trạng thái"
+  },
+  "layout": {
+    "upgradeTree": "Cây Nâng Cấp",
+    "runStatus": "Tình Trạng Lượt",
+    "ascension": "Thăng Hoa",
+    "activeBoons": "Phúc Ấn",
+    "boonNote": "Phòng phúc ấn xuất hiện sau mỗi lần hạ tier.",
+    "actions": "Nghi Thức Hành Động"
+  },
+  "boss": {
+    "name": "Khổng Ảnh Titan",
+    "essence": "Sinh lực",
+    "rage": "Cuồng nộ",
+    "corruption": "Tha hóa",
+    "phase": "Giai đoạn",
+    "hpUnit": "HP",
+    "tipActive": "Đánh có kỷ luật. Cuồng nộ và tha hóa luôn theo dõi.",
+    "tipChooseBoon": "Chọn một phúc ấn để tiếp tục.",
+    "tipFailed": "Thực Thể Vẫn Trụ. Quay lại vào ngày mai."
+  },
+  "statusPanel": {
+    "status": "Trạng thái",
+    "tier": "Tầng",
+    "phase": "Giai đoạn",
+    "rage": "Cuồng nộ",
+    "corruption": "Tha hóa",
+    "resistance": "Kháng",
+    "combo": "Liên kích",
+    "failCause": "Thất bại",
+    "active": "ĐANG CHIẾN",
+    "failed": "THẤT BẠI",
+    "noFailure": "Không"
+  },
+  "boons": {
+    "emptyTitle": "Chưa có phúc ấn",
+    "emptyHint": "Hạ boss tier để nhận phúc ấn.",
+    "additionalTitle": "Phúc Ấn Phụ",
+    "additionalHint": "Còn +{count} phúc ấn đang hoạt động.",
+    "blessing": "Phúc",
+    "curse": "Nguy",
+    "corruption": "Tha hóa",
+    "offerTitle": "Chọn Giao Ước",
+    "offerIdleHint": "Hạ một tier để mở phòng phúc ấn.",
+    "offerChooseHint": "Chọn 1 giao ước. Cái giá là bắt buộc."
+  },
+  "actions": {
+    "WORK": {
+      "label": "Làm việc hôm nay",
+      "hint": "Chém bổ nặng"
+    },
+    "DEEP_WORK": {
+      "label": "30 phút Deep Work",
+      "hint": "Đâm nhanh với quầng trắng"
+    },
+    "NO_SUGAR": {
+      "label": "Không nước ngọt",
+      "hint": "Tia năng lượng thanh"
+    },
+    "WALK": {
+      "label": "Đi bộ 20 phút",
+      "hint": "Cắt gió"
+    }
+  },
+  "upgradePaths": {
+    "DISCIPLINE": "Kỷ Luật",
+    "INTENSITY": "Cường Độ",
+    "STRATEGY": "Chiến Lược"
+  },
+  "tutorial": {
+    "title": "Hướng Dẫn Nghi Thức",
+    "replay": "Xem Lại Hướng Dẫn",
+    "skip": "Bỏ qua",
+    "prev": "Lùi",
+    "next": "Tiếp",
+    "done": "Bắt đầu",
+    "stepFormat": "Bước {current}/{total}",
+    "steps": [
+      "Đây là Boss. Hạ HP để tiến tầng.",
+      "Đây là Nghi Thức Hành Động. Hành động ngoài đời gây sát thương.",
+      "Cuồng nộ tăng nếu lặp lại hành động quá nhiều.",
+      "Hạ boss để nhận Phúc Ấn."
+    ]
+  },
+  "fail": {
+    "title": "THỰC THỂ VẪN TRỤ",
+    "subtitle": "Lượt này đã thất bại."
+  },
+  "cinematic": {
+    "phaseChange": "THỰC THỂ THỨC TỈNH",
+    "runFail": "THỰC THỂ VẪN TRỤ",
+    "boonChosen": "GIAO ƯỚC ĐÃ ẤN",
+    "upgrade": "SỨC MẠNH MỚI THỨC TỈNH",
+    "runReset": "NGHI THỨC MỚI BẮT ĐẦU"
+  },
+  "toasts": {
+    "levelUp": "Tăng cấp",
+    "tierBroken": "Phá tầng",
+    "runFailed": "Thất bại",
+    "boonInvoked": "Kích hoạt phúc ấn",
+    "nodeAwakened": "Mở nút",
+    "sigilRevealed": "Ấn chú lộ diện",
+    "structuralWeakness": "Điểm yếu cấu trúc",
+    "rageSurges": "Cuồng nộ bùng nổ",
+    "boonChamber": "Phòng phúc ấn",
+    "choosePact": "Hãy chọn giao ước.",
+    "noRetry": "Không được thử lại hôm nay.",
+    "permBossHpReduced": "HP boss giảm vĩnh viễn."
+  },
+  "misc": {
+    "runIndicatorPrefix": "Lượt",
+    "lockedFailed": "Bạn đã thua lượt hôm nay. Không có retry.",
+    "lockedBoon": "Hãy chọn một phúc ấn trước khi hành động.",
+    "ready": "Sẵn sàng",
+    "loading": "Đang tải...",
+    "error": "Lỗi",
+    "langToggle": "EN",
+    "langToggleAria": "Đổi ngôn ngữ"
+  }
+}

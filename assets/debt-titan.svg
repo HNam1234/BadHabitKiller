@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" role="img" aria-labelledby="title desc">
+  <title id="title">Debt Titan</title>
+  <desc id="desc">A stylized cyber titan portrait used as boss art.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1f3359"/>
+      <stop offset="60%" stop-color="#13233e"/>
+      <stop offset="100%" stop-color="#0d182d"/>
+    </linearGradient>
+    <linearGradient id="helm" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e7f0ff"/>
+      <stop offset="100%" stop-color="#9db9ff"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ff6f94"/>
+      <stop offset="100%" stop-color="#ff2d68"/>
+    </linearGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+  </defs>
+  <rect width="480" height="480" rx="36" fill="url(#bg)"/>
+  <ellipse cx="240" cy="380" rx="145" ry="34" fill="#070d1d" opacity=".65"/>
+  <ellipse cx="240" cy="228" rx="175" ry="165" fill="#0a1324"/>
+  <path d="M118 188c0-76 54-124 122-124s122 48 122 124v91c0 82-58 139-122 139s-122-57-122-139z" fill="url(#helm)"/>
+  <path d="M108 195c0-83 59-142 132-142s132 59 132 142l-23-9c-12-57-52-95-109-95s-97 38-109 95z" fill="#dbe8ff"/>
+  <path d="M140 205h200v75H140z" fill="#0d1933"/>
+  <rect x="150" y="220" width="78" height="22" rx="11" fill="url(#glow)"/>
+  <rect x="252" y="220" width="78" height="22" rx="11" fill="url(#glow)"/>
+  <circle cx="187" cy="231" r="7" fill="#ffd4df"/>
+  <circle cx="289" cy="231" r="7" fill="#ffd4df"/>
+  <path d="M173 312c16 14 37 21 67 21s51-7 67-21" fill="none" stroke="#243f73" stroke-width="12" stroke-linecap="round"/>
+  <rect x="148" y="347" width="184" height="38" rx="19" fill="#a2bbff"/>
+  <rect x="156" y="356" width="168" height="8" rx="4" fill="#5e84da"/>
+  <rect x="163" y="369" width="154" height="7" rx="3.5" fill="#5e84da"/>
+  <ellipse cx="240" cy="99" rx="120" ry="24" fill="#ff3f73" opacity=".22" filter="url(#soft)"/>
+  <ellipse cx="240" cy="406" rx="98" ry="18" fill="#4a6fbf" opacity=".38"/>
+</svg>

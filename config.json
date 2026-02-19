@@ -1,0 +1,256 @@
+{
+  "boss": {
+    "name": "The Debt Entity",
+    "tiers": [
+      { "tierLevel": 1, "totalHp": 5000000 },
+      { "tierLevel": 2, "totalHp": 8000000 },
+      { "tierLevel": 3, "totalHp": 12000000 },
+      { "tierLevel": 4, "totalHp": 18000000 },
+      { "tierLevel": 5, "totalHp": 30000000 }
+    ],
+    "fallbackScalingFactor": 1.5
+  },
+  "actions": {
+    "WORK": 360000,
+    "DEEP_WORK": 620000,
+    "NO_SUGAR": 190000,
+    "WALK": 160000
+  },
+  "damage": {
+    "diminishingFactor": 0.7
+  },
+  "progression": {
+    "xpPerDamageDivisor": 1000,
+    "leveling": {
+      "startingLevel": 1,
+      "startingXp": 0,
+      "baseXpToLevelUp": 650,
+      "growthFactor": 1.3,
+      "permanentDamageAddPerLevel": 0.01
+    },
+    "bossDefeatXp": {
+      "base": 1500,
+      "tierBonus": 300
+    },
+    "shardRewards": {
+      "base": 2,
+      "stepEveryTier": 2,
+      "stepReward": 1
+    }
+  },
+  "hardcore": {
+    "crit": {
+      "baseChance": 0.08,
+      "baseMultiplier": 2.0
+    },
+    "combo": {
+      "breakGapHours": 8
+    },
+    "rage": {
+      "comboBreakBaseGain": 18,
+      "repeatBaseGain": 14,
+      "repeatThreshold": 2,
+      "phase2GainMultiplier": 1.25,
+      "phase3GainMultiplier": 1.5,
+      "failThreshold": 100
+    },
+    "corruption": {
+      "resistancePerPoint": 0.0035,
+      "maxResistance": 0.55
+    },
+    "phase": {
+      "phase2HpThresholdPercent": 66,
+      "phase3HpThresholdPercent": 33,
+      "phase3NoCritDamagePenalty": 0.35
+    }
+  },
+  "sigil": {
+    "milestones": [3, 5, 8],
+    "fullRevealAtTier": 12
+  },
+  "upgrades": {
+    "paths": [
+      {
+        "pathId": "DISCIPLINE",
+        "label": "Discipline",
+        "nodes": [
+          {
+            "id": "DISCIPLINE_STREAK_FURY",
+            "name": "Streak Fury",
+            "description": "+5% damage when streak is 3 or higher.",
+            "cost": 3,
+            "maxRank": 1,
+            "prerequisiteIds": [],
+            "display": { "x": 18, "y": 70 },
+            "effects": [
+              { "type": "DAMAGE_WHEN_STREAK_AT_LEAST", "value": 0.05, "streakAtLeast": 3 }
+            ]
+          },
+          {
+            "id": "DISCIPLINE_FIRST_ACTION",
+            "name": "Opening Discipline",
+            "description": "+10% damage on the first action each day.",
+            "cost": 4,
+            "maxRank": 1,
+            "prerequisiteIds": ["DISCIPLINE_STREAK_FURY"],
+            "display": { "x": 50, "y": 38 },
+            "effects": [
+              { "type": "DAMAGE_WHEN_FIRST_ACTION_OF_DAY", "value": 0.1 }
+            ]
+          },
+          {
+            "id": "DISCIPLINE_GRACE",
+            "name": "Streak Grace",
+            "description": "Gain one grace charge to prevent one streak reset.",
+            "cost": 6,
+            "maxRank": 1,
+            "prerequisiteIds": ["DISCIPLINE_FIRST_ACTION"],
+            "display": { "x": 82, "y": 70 },
+            "effects": [
+              { "type": "STREAK_GRACE_CHARGE_ON_UNLOCK", "value": 1 }
+            ]
+          }
+        ]
+      },
+      {
+        "pathId": "INTENSITY",
+        "label": "Intensity",
+        "nodes": [
+          {
+            "id": "INTENSITY_DEEP_WORK",
+            "name": "Deep Work Pressure",
+            "description": "Deep work actions deal 1.5x damage.",
+            "cost": 4,
+            "maxRank": 1,
+            "prerequisiteIds": [],
+            "display": { "x": 22, "y": 60 },
+            "effects": [
+              { "type": "ACTION_TYPE_DAMAGE_MULTIPLIER", "actionType": "DEEP_WORK", "value": 0.5 }
+            ]
+          },
+          {
+            "id": "INTENSITY_COMBO",
+            "name": "Combo Rhythm",
+            "description": "After your first daily action, gain +10% damage.",
+            "cost": 5,
+            "maxRank": 1,
+            "prerequisiteIds": ["INTENSITY_DEEP_WORK"],
+            "display": { "x": 50, "y": 30 },
+            "effects": [
+              { "type": "DAMAGE_WHEN_COMBO_ACTIVE", "value": 0.1 }
+            ]
+          },
+          {
+            "id": "INTENSITY_FIRST_HIT",
+            "name": "First Impact",
+            "description": "First hit in each run gains +50% damage.",
+            "cost": 6,
+            "maxRank": 1,
+            "prerequisiteIds": ["INTENSITY_COMBO"],
+            "display": { "x": 78, "y": 60 },
+            "effects": [
+              { "type": "DAMAGE_WHEN_FIRST_HIT_OF_RUN", "value": 0.5 }
+            ]
+          }
+        ]
+      },
+      {
+        "pathId": "STRATEGY",
+        "label": "Strategy",
+        "nodes": [
+          {
+            "id": "STRATEGY_HP_REDUCTION",
+            "name": "Structural Weakness",
+            "description": "-2% boss HP permanently per rank.",
+            "cost": 3,
+            "maxRank": 10,
+            "prerequisiteIds": [],
+            "display": { "x": 20, "y": 62 },
+            "effects": [
+              { "type": "BOSS_HP_REDUCTION_PER_RANK", "value": 0.02 }
+            ]
+          },
+          {
+            "id": "STRATEGY_XP_GAIN",
+            "name": "Experience Mapping",
+            "description": "+20% XP gain.",
+            "cost": 5,
+            "maxRank": 1,
+            "prerequisiteIds": ["STRATEGY_HP_REDUCTION"],
+            "display": { "x": 50, "y": 30 },
+            "effects": [
+              { "type": "XP_GAIN_RAW", "value": 0.2 }
+            ]
+          },
+          {
+            "id": "STRATEGY_OVERFLOW",
+            "name": "Overflow Routing",
+            "description": "Carry 5% overflow damage into the next tier.",
+            "cost": 8,
+            "maxRank": 1,
+            "prerequisiteIds": ["STRATEGY_XP_GAIN"],
+            "display": { "x": 80, "y": 62 },
+            "effects": [
+              { "type": "OVERFLOW_RETENTION_RATE", "value": 0.05 }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "boons": {
+    "offerMin": 2,
+    "offerMax": 3,
+    "templates": [
+      {
+        "templateId": "BLOOD_PACT",
+        "name": "Blood Pact",
+        "epithet": "The wound becomes a weapon.",
+        "corruptionDelta": 16,
+        "benefits": [
+          { "type": "DAMAGE_RAW_ADD", "value": 0.4 }
+        ],
+        "drawbacks": [
+          { "type": "RAGE_GAIN_MULTIPLIER_ADD", "value": 0.25 }
+        ]
+      },
+      {
+        "templateId": "CRUSHING_RHYTHM",
+        "name": "Crushing Rhythm",
+        "epithet": "Cadence or collapse.",
+        "corruptionDelta": 12,
+        "benefits": [
+          { "type": "ACTION_TYPE_DAMAGE_RAW_ADD", "actionType": "DEEP_WORK", "value": 0.5 }
+        ],
+        "drawbacks": [
+          { "type": "COMBO_BREAK_HOURS_CAP", "value": 6 }
+        ]
+      },
+      {
+        "templateId": "STRUCTURAL_COLLAPSE",
+        "name": "Structural Collapse",
+        "epithet": "Break the frame, risk the soul.",
+        "corruptionDelta": 18,
+        "benefits": [
+          { "type": "PERMANENT_BOSS_HP_REDUCTION_ADD", "value": 0.05 }
+        ],
+        "drawbacks": [
+          { "type": "LOSE_BOONS_ON_FAIL", "value": 1 }
+        ]
+      },
+      {
+        "templateId": "ASHEN_PRECISION",
+        "name": "Ashen Precision",
+        "epithet": "One strike, absolute silence.",
+        "corruptionDelta": 10,
+        "benefits": [
+          { "type": "CRIT_CHANCE_ADD", "value": 0.12 },
+          { "type": "CRIT_MULTIPLIER_ADD", "value": 0.35 }
+        ],
+        "drawbacks": [
+          { "type": "RAGE_GAIN_MULTIPLIER_ADD", "value": 0.1 }
+        ]
+      }
+    ]
+  }
+}

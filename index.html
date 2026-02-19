@@ -1,0 +1,189 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Debt Boss</title>
+    <meta
+      name="description"
+      content="Hardcore roguelike daily run. Face the dark entity in a ritual combat arena."
+    />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="ritual-app" id="app">
+      <header class="ritual-header">
+        <div class="ritual-header__title-wrap">
+          <h1 class="ritual-header__title" id="appTitle">Debt Boss</h1>
+          <div class="ritual-header__subtitle" id="appSubtitle">One ritual each day.</div>
+        </div>
+
+        <div class="ritual-header__controls">
+          <button class="ritual-control-btn" id="tutorialReplayButton" type="button">Replay Tutorial</button>
+          <button class="ritual-control-btn" id="languageToggleButton" type="button" aria-label="Switch language">VI</button>
+        </div>
+      </header>
+
+      <section class="ritual-meta">
+        <div class="ritual-meta__item">
+          <div class="ritual-meta__label" id="runLabel">Run</div>
+          <div class="ritual-meta__value" id="runText">Run</div>
+        </div>
+        <div class="ritual-meta__item">
+          <div class="ritual-meta__label" id="shardsLabel">Shards</div>
+          <div class="ritual-meta__value" id="shardsText">0</div>
+        </div>
+        <div class="ritual-meta__item">
+          <div class="ritual-meta__label" id="levelLabel">Level</div>
+          <div class="ritual-meta__value"><span id="levelText">1</span></div>
+        </div>
+        <div class="ritual-meta__item">
+          <div class="ritual-meta__label" id="streakLabel">Streak</div>
+          <div class="ritual-meta__value" id="streakText">0</div>
+        </div>
+        <div class="ritual-meta__item">
+          <div class="ritual-meta__label" id="statusLabel">Status</div>
+          <div class="ritual-meta__value ritual-meta__value--status" id="statusText">Loading...</div>
+        </div>
+      </section>
+
+      <section class="ritual-layout">
+        <aside class="ritual-panel ritual-panel--left" aria-label="Upgrade Tree">
+          <div class="ritual-panel__title" id="upgradeTreeTitle">Upgrade Tree</div>
+          <div class="constellation-root" id="upgradeTree"></div>
+        </aside>
+
+        <section class="altar" aria-label="Combat Arena">
+          <div class="altar__boss-name" id="bossName">Shadow Titan</div>
+
+          <div class="entity-stage" id="entityStage">
+            <div class="entity-aura" id="entityAura"></div>
+            <div class="entity-core" id="entityCore"></div>
+            <div class="entity-sigil-layer" id="entitySigilLayer"></div>
+            <div class="entity-fracture-layer" id="entityFractureLayer"></div>
+
+            <div class="combat-arena" id="combatArena">
+              <div class="arena-player" id="arenaPlayer">
+                <div class="arena-player__blade"></div>
+              </div>
+
+              <div class="arena-boss" id="arenaBoss">
+                <div class="arena-boss__eyes"></div>
+                <div class="arena-boss__chest-sigil"></div>
+              </div>
+
+              <div class="arena-slash-layer" id="slashLayer"></div>
+            </div>
+          </div>
+
+          <div class="altar-bars">
+            <div class="altar-bar altar-bar--hp">
+              <div class="altar-bar__head">
+                <span id="essenceLabel">Essence</span>
+                <span id="hpText">0 / 0 HP</span>
+              </div>
+              <div class="altar-bar__rail"><div class="altar-bar__fill" id="hpFill"></div></div>
+            </div>
+
+            <div class="altar-bar altar-bar--rage">
+              <div class="altar-bar__head">
+                <span id="rageLabel">Rage</span>
+                <span id="rageText">0%</span>
+              </div>
+              <div class="altar-bar__rail"><div class="altar-bar__fill" id="rageFill"></div></div>
+            </div>
+
+            <div class="altar-bar altar-bar--corruption">
+              <div class="altar-bar__head">
+                <span id="corruptionLabel">Corruption</span>
+                <span id="corruptionText">0%</span>
+              </div>
+              <div class="altar-bar__rail"><div class="altar-bar__fill" id="corruptionFill"></div></div>
+            </div>
+          </div>
+
+          <div class="altar__phase" id="phaseText">Phase 1</div>
+          <div class="altar__tip" id="tipText">Begin the ritual.</div>
+        </section>
+
+        <aside class="ritual-panel ritual-panel--right" aria-label="Run Status and Boons">
+          <section class="status-block">
+            <div class="ritual-panel__title" id="runStatusTitle">Run Status</div>
+            <div class="status-grid">
+              <div class="status-grid__row"><span id="runStatusLabel">Status</span><strong id="runStatusValue">ACTIVE</strong></div>
+              <div class="status-grid__row"><span id="runTierLabel">Tier</span><strong id="runTierValue">1</strong></div>
+              <div class="status-grid__row"><span id="runPhaseLabel">Phase</span><strong id="runPhaseValue">Phase 1</strong></div>
+              <div class="status-grid__row"><span id="runRageLabel">Rage</span><strong id="runRageValue">0%</strong></div>
+              <div class="status-grid__row"><span id="runCorruptionLabel">Corruption</span><strong id="runCorruptionValue">0%</strong></div>
+              <div class="status-grid__row"><span id="runResistanceLabel">Resistance</span><strong id="runResistanceValue">0%</strong></div>
+              <div class="status-grid__row"><span id="runComboLabel">Combo</span><strong id="runComboValue">0</strong></div>
+              <div class="status-grid__row status-grid__row--fail"><span id="runFailLabel">Fail</span><strong id="runFailValue">None</strong></div>
+            </div>
+          </section>
+
+          <section class="xp-block">
+            <div class="ritual-panel__title" id="ascensionTitle">Ascension</div>
+            <div class="xp-block__numbers" id="xpText">0 / 0 XP</div>
+            <div class="xp-block__rail"><div class="xp-block__fill" id="xpFill"></div></div>
+            <div class="xp-block__meta" id="playerMetaText"></div>
+          </section>
+
+          <section class="boon-block">
+            <div class="ritual-panel__title" id="activeBoonsTitle">Active Boons</div>
+            <div class="boon-block__note" id="boonBlockNote">Defeat to gain boons.</div>
+            <div class="boon-list" id="boonList"></div>
+          </section>
+        </aside>
+      </section>
+
+      <section class="ritual-actions">
+        <div class="ritual-actions__title" id="actionsTitle">Action Rituals</div>
+        <div class="ritual-actions__grid" id="actions"></div>
+        <div class="ritual-actions__error" id="errorText" role="status" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <section class="boon-overlay" id="boonOverlay" aria-label="Boon Choice">
+      <div class="boon-overlay__panel">
+        <div class="boon-overlay__title" id="boonOverlayTitle">Choose Your Pact</div>
+        <div class="boon-overlay__hint" id="boonOfferHint">Defeat the entity to invoke a boon.</div>
+        <div class="boon-overlay__list" id="boonOfferList"></div>
+      </div>
+    </section>
+
+    <section class="tutorial-overlay" id="tutorialOverlay" aria-hidden="true">
+      <div class="tutorial-overlay__panel">
+        <div class="tutorial-overlay__head">
+          <div class="tutorial-overlay__title" id="tutorialTitle">Tutorial</div>
+          <button class="tutorial-overlay__skip" id="tutorialSkipButton" type="button">Skip</button>
+        </div>
+        <div class="tutorial-overlay__counter" id="tutorialStepCounter">Step 1/4</div>
+        <div class="tutorial-overlay__body" id="tutorialStepBody"></div>
+        <div class="tutorial-overlay__actions">
+          <button class="tutorial-overlay__btn" id="tutorialPrevButton" type="button">Back</button>
+          <button class="tutorial-overlay__btn" id="tutorialNextButton" type="button">Next</button>
+          <button class="tutorial-overlay__btn tutorial-overlay__btn--primary" id="tutorialDoneButton" type="button">Begin</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="cinematic-overlay" id="cinematicOverlay" aria-hidden="true">
+      <div class="cinematic-overlay__title" id="cinematicTitle"></div>
+      <div class="cinematic-overlay__sub" id="cinematicSub"></div>
+    </section>
+
+    <section class="fail-overlay" id="failOverlay" aria-hidden="true">
+      <div class="fail-overlay__title" id="failTitle">THE ENTITY ENDURES</div>
+      <div class="fail-overlay__sub" id="failSub">Run Failed.</div>
+      <div class="fail-overlay__reason" id="failReason"></div>
+    </section>
+
+    <div class="toasts" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+    <div class="level-up" id="levelUpOverlay" aria-hidden="true">
+      <div class="level-up__text">LEVEL UP</div>
+      <div class="level-up__sub" id="levelUpSub"></div>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
