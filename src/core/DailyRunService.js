@@ -47,6 +47,11 @@ export class DailyRunService {
       lastActionAt: null,
       lastActionType: "",
       repeatedActionCount: 0,
+      comboBreaksCount: 0,
+      impulseResistanceAdd: 0,
+      campaignId: "",
+      deepWorkActions: 0,
+      hadImpulseToday: false,
       activeBoons: [],
       boonOffer: [],
     };
@@ -73,6 +78,12 @@ export class DailyRunService {
     const lastActionType = typeof run.lastActionType === "string" ? run.lastActionType : "";
     const repeatedActionCount =
       Number.isFinite(run.repeatedActionCount) && run.repeatedActionCount >= 0 ? Math.floor(run.repeatedActionCount) : 0;
+    const comboBreaksCount =
+      Number.isFinite(run.comboBreaksCount) && run.comboBreaksCount >= 0 ? Math.floor(run.comboBreaksCount) : 0;
+    const impulseResistanceAdd = Number.isFinite(run.impulseResistanceAdd) ? run.impulseResistanceAdd : 0;
+    const campaignId = typeof run.campaignId === "string" ? run.campaignId : "";
+    const deepWorkActions = Number.isFinite(run.deepWorkActions) && run.deepWorkActions >= 0 ? Math.floor(run.deepWorkActions) : 0;
+    const hadImpulseToday = Boolean(run.hadImpulseToday);
     const activeBoons = Array.isArray(run.activeBoons) ? run.activeBoons : [];
     const boonOffer = Array.isArray(run.boonOffer) ? run.boonOffer : [];
 
@@ -92,6 +103,11 @@ export class DailyRunService {
       lastActionAt,
       lastActionType,
       repeatedActionCount,
+      comboBreaksCount,
+      impulseResistanceAdd,
+      campaignId,
+      deepWorkActions,
+      hadImpulseToday,
       activeBoons,
       boonOffer,
     };

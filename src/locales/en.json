@@ -19,6 +19,53 @@
     "boonNote": "Boon chamber appears after each tier defeat.",
     "actions": "Action Rituals"
   },
+  "campaignPanel": {
+    "title": "Campaign",
+    "bossType": "Boss Type",
+    "theme": "Theme"
+  },
+  "deckPanel": {
+    "title": "Relic Deck",
+    "slots": "Slots",
+    "apply": "Apply Deck",
+    "permanentType": "Permanent",
+    "runType": "Run"
+  },
+  "integrityPanel": {
+    "title": "Integrity"
+  },
+  "redemptionPanel": {
+    "title": "Redemption",
+    "progress": "Progress",
+    "total": "Total"
+  },
+  "impulsePanel": {
+    "title": "Impulse & Debt Log",
+    "currentDebt": "Current Debt",
+    "totalPaid": "Total Paid",
+    "integrity": "Integrity",
+    "redemption": "Redemption",
+    "debtPayment": "Debt Payment",
+    "impulseSpending": "Impulse Spending",
+    "history": "History",
+    "logPayment": "Log Payment",
+    "logImpulse": "Log Impulse",
+    "redeem": "Redeem",
+    "redeemAmount": "Redeem amount",
+    "empty": "No impulse logs.",
+    "notePlaceholder": "Impulse note"
+  },
+  "cosmeticPanel": {
+    "title": "Cosmetic Inventory",
+    "summon": "Free Summon",
+    "recent": "Recent",
+    "noRecent": "No summon yet.",
+    "equip": "Equip",
+    "equipped": "Equipped"
+  },
+  "finance": {
+    "debt": "Debt"
+  },
   "boss": {
     "name": "Shadow Titan",
     "essence": "Essence",
@@ -115,7 +162,10 @@
     "runFail": "THE ENTITY ENDURES",
     "boonChosen": "PACT SEALED",
     "upgrade": "NEW POWER AWAKENED",
-    "runReset": "A NEW RITUAL BEGINS"
+    "runReset": "A NEW RITUAL BEGINS",
+    "campaignAdvance": "CAMPAIGN ASCENDS",
+    "finalCampaign": "FINAL RITUAL UNSEALED",
+    "trueEnding": "DEBT ERASED - THE RITUAL IS COMPLETE"
   },
   "toasts": {
     "levelUp": "Level Up",
@@ -129,7 +179,12 @@
     "boonChamber": "Boon Chamber",
     "choosePact": "Choose your pact.",
     "noRetry": "No retries today.",
-    "permBossHpReduced": "Permanent boss HP reduced."
+    "permBossHpReduced": "Permanent boss HP reduced.",
+    "impulseLogged": "Impulse Logged",
+    "paymentLogged": "Payment Logged",
+    "redemption": "Redemption Triggered",
+    "redemptionBody": "Burdens reduced.",
+    "cosmeticSummon": "Cosmetic Summon"
   },
   "misc": {
     "runIndicatorPrefix": "Run",
@@ -140,6 +195,11 @@
     "error": "Error",
     "langToggle": "VI",
     "langToggleAria": "Switch language",
+    "advancedStats": "Advanced Stats",
+    "ritualChamber": "Ritual Chamber",
+    "ledgerMode": "Ledger",
+    "settings": "Settings",
+    "xpLabel": "XP",
     "permDamageShort": "DMG",
     "bossHpShort": "BossHP",
     "graceShort": "Grace"

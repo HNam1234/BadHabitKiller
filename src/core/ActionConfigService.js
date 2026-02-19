@@ -111,6 +111,59 @@ export class ActionConfigService {
     };
   }
 
+  getDebtConfig() {
+    this.#ensureLoaded();
+    return { ...this.#config.debt };
+  }
+
+  getCampaignConfig() {
+    this.#ensureLoaded();
+    return this.#config.campaigns.map((campaign) => ({
+      ...campaign,
+      combatModifier: campaign.combatModifier && typeof campaign.combatModifier === "object"
+        ? { ...campaign.combatModifier }
+        : {},
+    }));
+  }
+
+  getDeckConfig() {
+    this.#ensureLoaded();
+    return {
+      maxPoolSize: this.#config.deck.maxPoolSize,
+      activeSlots: this.#config.deck.activeSlots,
+      synergy: { ...this.#config.deck.synergy },
+      cards: this.#config.deck.cards.map((card) => ({
+        ...card,
+        tags: Array.isArray(card.tags) ? card.tags.slice() : [],
+        effect: card.effect && typeof card.effect === "object" ? { ...card.effect } : {},
+        tradeoff: card.tradeoff && typeof card.tradeoff === "object" ? { ...card.tradeoff } : null,
+      })),
+    };
+  }
+
+  getIntegrityConfig() {
+    this.#ensureLoaded();
+    return { ...this.#config.integrity };
+  }
+
+  getImpulseConfig() {
+    this.#ensureLoaded();
+    return { ...this.#config.impulse };
+  }
+
+  getRedemptionConfig() {
+    this.#ensureLoaded();
+    return { ...this.#config.redemption };
+  }
+
+  getCosmeticConfig() {
+    this.#ensureLoaded();
+    return {
+      rarityWeights: { ...this.#config.cosmetics.rarityWeights },
+      pool: this.#config.cosmetics.pool.map((item) => ({ ...item })),
+    };
+  }
+
   // Backward-compatible alias to avoid breaking old composition roots.
   getBuffConfig() {
     return this.getBoonConfig();
@@ -140,6 +193,13 @@ export class ActionConfigService {
     this.#validateSigil(json);
     this.#validateUpgrades(json);
     this.#validateBoons(json);
+    this.#validateDebt(json);
+    this.#validateCampaigns(json);
+    this.#validateDeck(json);
+    this.#validateIntegrity(json);
+    this.#validateImpulse(json);
+    this.#validateRedemption(json);
+    this.#validateCosmetics(json);
   }
 
   #validateBoss(json) {
@@ -348,6 +408,91 @@ export class ActionConfigService {
       if (!Array.isArray(template.drawbacks) || template.drawbacks.length === 0) {
         throw new Error("Boon drawbacks must be non-empty.");
       }
+    }
+  }
+
+  #validateDebt(json) {
+    if (!json.debt || typeof json.debt !== "object") throw new Error("Config.debt is required.");
+    if (!Number.isFinite(json.debt.totalDebt) || json.debt.totalDebt <= 0) {
+      throw new Error("Config.debt.totalDebt must be > 0.");
+    }
+    if (json.debt.startingDebt !== undefined && (!Number.isFinite(json.debt.startingDebt) || json.debt.startingDebt < 0)) {
+      throw new Error("Config.debt.startingDebt must be >= 0.");
+    }
+  }
+
+  #validateCampaigns(json) {
+    if (!Array.isArray(json.campaigns) || json.campaigns.length < 4) {
+      throw new Error("Config.campaigns must include standard campaigns and final campaign.");
+    }
+
+    for (const campaign of json.campaigns) {
+      if (!campaign || typeof campaign !== "object") throw new Error("Campaign entry must be object.");
+      if (typeof campaign.id !== "string" || campaign.id.trim().length === 0) throw new Error("Campaign id required.");
+      if (typeof campaign.label !== "string" || campaign.label.trim().length === 0) throw new Error("Campaign label required.");
+      if (typeof campaign.bossType !== "string" || campaign.bossType.trim().length === 0) throw new Error("Campaign bossType required.");
+      if (typeof campaign.bossName !== "string" || campaign.bossName.trim().length === 0) throw new Error("Campaign bossName required.");
+
+      if (!Boolean(campaign.isFinal)) {
+        if (!Number.isFinite(campaign.minDebtRatio) || campaign.minDebtRatio < 0 || campaign.minDebtRatio > 1) {
+          throw new Error(`Invalid minDebtRatio for ${campaign.id}.`);
+        }
+        if (!Number.isFinite(campaign.maxDebtRatio) || campaign.maxDebtRatio < 0 || campaign.maxDebtRatio > 1) {
+          throw new Error(`Invalid maxDebtRatio for ${campaign.id}.`);
+        }
+      }
+    }
+  }
+
+  #validateDeck(json) {
+    if (!json.deck || typeof json.deck !== "object") throw new Error("Config.deck is required.");
+    if (!Number.isFinite(json.deck.maxPoolSize) || json.deck.maxPoolSize <= 0) {
+      throw new Error("Config.deck.maxPoolSize must be > 0.");
+    }
+    if (!Number.isFinite(json.deck.activeSlots) || json.deck.activeSlots <= 0) {
+      throw new Error("Config.deck.activeSlots must be > 0.");
+    }
+    if (!json.deck.synergy || typeof json.deck.synergy !== "object") throw new Error("Config.deck.synergy is required.");
+    if (!Array.isArray(json.deck.cards) || json.deck.cards.length === 0) throw new Error("Config.deck.cards must be non-empty.");
+
+    for (const card of json.deck.cards) {
+      if (!card || typeof card !== "object") throw new Error("Deck card must be object.");
+      if (typeof card.id !== "string" || card.id.trim().length === 0) throw new Error("Deck card id required.");
+      if (typeof card.name !== "string" || card.name.trim().length === 0) throw new Error("Deck card name required.");
+      if (card.type !== "Permanent" && card.type !== "Run") throw new Error(`Deck card type invalid for ${card.id}.`);
+      if (!Array.isArray(card.tags)) throw new Error(`Deck card tags must be array for ${card.id}.`);
+      if (!card.effect || typeof card.effect !== "object") throw new Error(`Deck card effect must be object for ${card.id}.`);
+    }
+  }
+
+  #validateIntegrity(json) {
+    if (!json.integrity || typeof json.integrity !== "object") throw new Error("Config.integrity is required.");
+    if (!Number.isFinite(json.integrity.base)) throw new Error("Config.integrity.base is required.");
+    if (!Number.isFinite(json.integrity.min)) throw new Error("Config.integrity.min is required.");
+    if (!Number.isFinite(json.integrity.max)) throw new Error("Config.integrity.max is required.");
+  }
+
+  #validateImpulse(json) {
+    if (!json.impulse || typeof json.impulse !== "object") throw new Error("Config.impulse is required.");
+    if (!Number.isFinite(json.impulse.hpMultiplier) || json.impulse.hpMultiplier <= 0) {
+      throw new Error("Config.impulse.hpMultiplier must be > 0.");
+    }
+  }
+
+  #validateRedemption(json) {
+    if (!json.redemption || typeof json.redemption !== "object") throw new Error("Config.redemption is required.");
+    if (!Number.isFinite(json.redemption.requiredConsistencyDays) || json.redemption.requiredConsistencyDays <= 0) {
+      throw new Error("Config.redemption.requiredConsistencyDays must be > 0.");
+    }
+  }
+
+  #validateCosmetics(json) {
+    if (!json.cosmetics || typeof json.cosmetics !== "object") throw new Error("Config.cosmetics is required.");
+    if (!json.cosmetics.rarityWeights || typeof json.cosmetics.rarityWeights !== "object") {
+      throw new Error("Config.cosmetics.rarityWeights is required.");
+    }
+    if (!Array.isArray(json.cosmetics.pool) || json.cosmetics.pool.length === 0) {
+      throw new Error("Config.cosmetics.pool must be non-empty.");
     }
   }
 }

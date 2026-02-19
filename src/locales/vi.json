@@ -19,6 +19,53 @@
     "boonNote": "Phòng phúc ấn xuất hiện sau mỗi lần hạ tier.",
     "actions": "Nghi Thức Hành Động"
   },
+  "campaignPanel": {
+    "title": "Chiến Dịch",
+    "bossType": "Loại Boss",
+    "theme": "Chủ đề"
+  },
+  "deckPanel": {
+    "title": "Bộ Ấn Tích",
+    "slots": "Ô",
+    "apply": "Áp Dụng Bộ",
+    "permanentType": "Vĩnh viễn",
+    "runType": "Theo lượt"
+  },
+  "integrityPanel": {
+    "title": "Chính Trực"
+  },
+  "redemptionPanel": {
+    "title": "Chuộc Lỗi",
+    "progress": "Tiến độ",
+    "total": "Tổng"
+  },
+  "impulsePanel": {
+    "title": "Ghi Nợ & Chi Bốc Đồng",
+    "currentDebt": "Nợ hiện tại",
+    "totalPaid": "Đã trả",
+    "integrity": "Chính trực",
+    "redemption": "Chuộc lỗi",
+    "debtPayment": "Thanh toán nợ",
+    "impulseSpending": "Chi bốc đồng",
+    "history": "Lịch sử",
+    "logPayment": "Ghi thanh toán",
+    "logImpulse": "Ghi bốc đồng",
+    "redeem": "Hoàn trả",
+    "redeemAmount": "Mức hoàn trả",
+    "empty": "Chưa có log bốc đồng.",
+    "notePlaceholder": "Ghi chú bốc đồng"
+  },
+  "cosmeticPanel": {
+    "title": "Kho Ngoại Hình",
+    "summon": "Triệu hồi miễn phí",
+    "recent": "Gần nhất",
+    "noRecent": "Chưa triệu hồi.",
+    "equip": "Trang bị",
+    "equipped": "Đang dùng"
+  },
+  "finance": {
+    "debt": "Nợ"
+  },
   "boss": {
     "name": "Khổng Ảnh Titan",
     "essence": "Sinh lực",
@@ -115,7 +162,10 @@
     "runFail": "THỰC THỂ VẪN TRỤ",
     "boonChosen": "GIAO ƯỚC ĐÃ ẤN",
     "upgrade": "SỨC MẠNH MỚI THỨC TỈNH",
-    "runReset": "NGHI THỨC MỚI BẮT ĐẦU"
+    "runReset": "NGHI THỨC MỚI BẮT ĐẦU",
+    "campaignAdvance": "CHIẾN DỊCH THĂNG TIẾN",
+    "finalCampaign": "NGHI THỨC CUỐI MỞ RA",
+    "trueEnding": "NỢ ĐÃ XÓA - NGHI THỨC HOÀN TẤT"
   },
   "toasts": {
     "levelUp": "Tăng cấp",
@@ -129,7 +179,12 @@
     "boonChamber": "Phòng phúc ấn",
     "choosePact": "Hãy chọn giao ước.",
     "noRetry": "Không được thử lại hôm nay.",
-    "permBossHpReduced": "HP boss giảm vĩnh viễn."
+    "permBossHpReduced": "HP boss giảm vĩnh viễn.",
+    "impulseLogged": "Đã ghi bốc đồng",
+    "paymentLogged": "Đã ghi thanh toán",
+    "redemption": "Kích hoạt chuộc lỗi",
+    "redemptionBody": "Gánh nặng đã giảm.",
+    "cosmeticSummon": "Triệu hồi ngoại hình"
   },
   "misc": {
     "runIndicatorPrefix": "Lượt",
@@ -140,6 +195,11 @@
     "error": "Lỗi",
     "langToggle": "EN",
     "langToggleAria": "Đổi ngôn ngữ",
+    "advancedStats": "Chỉ số nâng cao",
+    "ritualChamber": "Nghi Điện",
+    "ledgerMode": "Sổ Cái",
+    "settings": "Thiết lập",
+    "xpLabel": "XP",
     "permDamageShort": "SATTH",
     "bossHpShort": "HPBoss",
     "graceShort": "BaoHo"

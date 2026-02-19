@@ -252,5 +252,224 @@
         ]
       }
     ]
+  },
+  "debt": {
+    "totalDebt": 120000000,
+    "startingDebt": 120000000
+  },
+  "campaigns": [
+    {
+      "id": "CAMPAIGN_1",
+      "label": "Campaign I - Chain of Denial",
+      "subtitle": "Debt 100% to 75%",
+      "minDebtRatio": 0.75,
+      "maxDebtRatio": 1,
+      "bossType": "USURER_SHADE",
+      "bossName": "The Usurer Shade",
+      "visualTheme": "Ashen Cathedral",
+      "combatModifier": {
+        "bossHpMultiplier": 1,
+        "rageGainMultiplier": 1.04,
+        "resistanceAdd": 0.01,
+        "damageRawAdd": 0
+      }
+    },
+    {
+      "id": "CAMPAIGN_2",
+      "label": "Campaign II - Iron Ledger",
+      "subtitle": "Debt 75% to 50%",
+      "minDebtRatio": 0.5,
+      "maxDebtRatio": 0.75,
+      "bossType": "LEDGER_TYRANT",
+      "bossName": "The Ledger Tyrant",
+      "visualTheme": "Bronze Citadel",
+      "combatModifier": {
+        "bossHpMultiplier": 1.06,
+        "rageGainMultiplier": 1.08,
+        "resistanceAdd": 0.02,
+        "damageRawAdd": 0.02
+      }
+    },
+    {
+      "id": "CAMPAIGN_3",
+      "label": "Campaign III - Weight of Default",
+      "subtitle": "Debt 50% to 25%",
+      "minDebtRatio": 0.25,
+      "maxDebtRatio": 0.5,
+      "bossType": "DEFAULT_CRUSHER",
+      "bossName": "The Default Crusher",
+      "visualTheme": "Fallen Mint",
+      "combatModifier": {
+        "bossHpMultiplier": 1.12,
+        "rageGainMultiplier": 1.12,
+        "resistanceAdd": 0.03,
+        "damageRawAdd": 0.03
+      }
+    },
+    {
+      "id": "CAMPAIGN_4",
+      "label": "Campaign IV - Void Collection",
+      "subtitle": "Debt 25% to 0%",
+      "minDebtRatio": 0,
+      "maxDebtRatio": 0.25,
+      "bossType": "VOID_COLLECTOR",
+      "bossName": "The Void Collector",
+      "visualTheme": "Abyss Archive",
+      "combatModifier": {
+        "bossHpMultiplier": 1.2,
+        "rageGainMultiplier": 1.16,
+        "resistanceAdd": 0.04,
+        "damageRawAdd": 0.04
+      }
+    },
+    {
+      "id": "FINAL_CHAINBREAKER",
+      "label": "Final Campaign - Chainbreaker",
+      "subtitle": "Debt erased. Face the true form.",
+      "bossType": "CHAINBREAKER_TRUE_FORM",
+      "bossName": "The Chainbreaker True Form",
+      "visualTheme": "Ritual Zenith",
+      "isFinal": true,
+      "combatModifier": {
+        "bossHpMultiplier": 1.35,
+        "rageGainMultiplier": 1.22,
+        "resistanceAdd": 0.06,
+        "damageRawAdd": 0.08
+      }
+    }
+  ],
+  "deck": {
+    "maxPoolSize": 15,
+    "activeSlots": 5,
+    "synergy": {
+      "requiredTagCount": 2,
+      "damageRawBonus": 0.08,
+      "critChanceAdd": 0.02
+    },
+    "cards": [
+      {
+        "id": "RELIC_LEDGER_BLADE",
+        "name": "Ledger Blade",
+        "type": "Permanent",
+        "tags": ["discipline", "focus"],
+        "effect": { "damageRawAdd": 0.08 }
+      },
+      {
+        "id": "RELIC_STEADY_HEART",
+        "name": "Steady Heart",
+        "type": "Permanent",
+        "tags": ["discipline", "resilience"],
+        "effect": { "critChanceAdd": 0.03 }
+      },
+      {
+        "id": "RELIC_STRATEGIC_LEDGER",
+        "name": "Strategic Ledger",
+        "type": "Permanent",
+        "tags": ["strategy", "mind"],
+        "effect": { "xpRawAdd": 0.15 }
+      },
+      {
+        "id": "RELIC_WORK_RHYTHM",
+        "name": "Work Rhythm",
+        "type": "Permanent",
+        "tags": ["intensity", "work"],
+        "effect": { "actionType": "WORK", "actionTypeDamageRawAdd": 0.18 }
+      },
+      {
+        "id": "RELIC_DEEP_SPEAR",
+        "name": "Deep Spear",
+        "type": "Permanent",
+        "tags": ["intensity", "focus"],
+        "effect": { "actionType": "DEEP_WORK", "actionTypeDamageRawAdd": 0.22 }
+      },
+      {
+        "id": "RUN_BLOODPACT_SIGIL",
+        "name": "Bloodpact Sigil",
+        "type": "Run",
+        "tags": ["risk", "intensity"],
+        "effect": { "damageRawAdd": 0.18 },
+        "tradeoff": { "rageGainMultiplierAdd": 0.2, "corruptionAdd": 3 }
+      },
+      {
+        "id": "RUN_QUIET_VOW",
+        "name": "Quiet Vow",
+        "type": "Run",
+        "tags": ["discipline", "purity"],
+        "effect": { "actionType": "NO_SUGAR", "actionTypeDamageRawAdd": 0.16 }
+      },
+      {
+        "id": "RUN_WIND_CYCLE",
+        "name": "Wind Cycle",
+        "type": "Run",
+        "tags": ["discipline", "motion"],
+        "effect": { "actionType": "WALK", "actionTypeDamageRawAdd": 0.14 }
+      },
+      {
+        "id": "RUN_EDGE_OF_DAWN",
+        "name": "Edge of Dawn",
+        "type": "Run",
+        "tags": ["focus", "strategy"],
+        "effect": { "critChanceAdd": 0.06 },
+        "tradeoff": { "resistanceAdd": 0.02 }
+      },
+      {
+        "id": "RUN_CHAIN_PRESSURE",
+        "name": "Chain Pressure",
+        "type": "Run",
+        "tags": ["risk", "strategy"],
+        "effect": { "xpRawAdd": 0.2 },
+        "tradeoff": { "rageGainMultiplierAdd": 0.1 }
+      }
+    ]
+  },
+  "integrity": {
+    "base": 72,
+    "min": 0,
+    "max": 100,
+    "damageMultiplierAtZero": 0.82,
+    "damageMultiplierAtFull": 1.15,
+    "critBonusAtFull": 0.12,
+    "resistanceReductionAtFull": 0.1,
+    "idleDaysThreshold": 3,
+    "idleDaysPenalty": 6,
+    "impulsePenaltyPer100": 1.1,
+    "debtPaymentRewardPer100": 0.9,
+    "comboBreakPenalty": 2,
+    "deepWorkReward": 1.5,
+    "noImpulseRewardDays": 3,
+    "noImpulseDaysReward": 4
+  },
+  "impulse": {
+    "hpMultiplier": 1.5,
+    "corruptionGainPer100": 1.2,
+    "resistanceAddPer100": 0.0038,
+    "maxResistanceAdd": 0.25
+  },
+  "redemption": {
+    "requiredConsistencyDays": 7,
+    "corruptionReduction": 18,
+    "impulseHpRecoveryRate": 0.5,
+    "integrityGain": 10
+  },
+  "cosmetics": {
+    "rarityWeights": {
+      "Common": 80,
+      "Rare": 17,
+      "Legendary": 3
+    },
+    "pool": [
+      { "id": "WARRIOR_ASHEN_MANTLE", "name": "Ashen Mantle", "slot": "warrior", "rarity": "Common", "className": "skin-warrior-ashen" },
+      { "id": "WARRIOR_IRON_MONK", "name": "Iron Monk", "slot": "warrior", "rarity": "Rare", "className": "skin-warrior-iron" },
+      { "id": "WARRIOR_SOLAR_ASCENDANT", "name": "Solar Ascendant", "slot": "warrior", "rarity": "Legendary", "className": "skin-warrior-solar" },
+      { "id": "WEAPON_BROKEN_LEDGER", "name": "Broken Ledger", "slot": "weapon", "rarity": "Common", "className": "skin-weapon-ledger" },
+      { "id": "WEAPON_RITUAL_SPIKE", "name": "Ritual Spike", "slot": "weapon", "rarity": "Rare", "className": "skin-weapon-spike" },
+      { "id": "WEAPON_CHAINBREAKER_EDGE", "name": "Chainbreaker Edge", "slot": "weapon", "rarity": "Legendary", "className": "skin-weapon-chainbreaker" },
+      { "id": "AURA_EMBER_DUST", "name": "Ember Dust", "slot": "aura", "rarity": "Common", "className": "skin-aura-ember" },
+      { "id": "AURA_VOID_RIPPLE", "name": "Void Ripple", "slot": "aura", "rarity": "Rare", "className": "skin-aura-void" },
+      { "id": "AURA_ASTRAL_THRONE", "name": "Astral Throne", "slot": "aura", "rarity": "Legendary", "className": "skin-aura-astral" },
+      { "id": "DMG_NUM_RUNE", "name": "Rune Digits", "slot": "damage", "rarity": "Common", "className": "skin-dmg-rune" },
+      { "id": "DMG_NUM_CRIMSON", "name": "Crimson Digits", "slot": "damage", "rarity": "Rare", "className": "skin-dmg-crimson" },
+      { "id": "DMG_NUM_DIVINE", "name": "Divine Digits", "slot": "damage", "rarity": "Legendary", "className": "skin-dmg-divine" }
+    ]
   }
 }

@@ -1,12 +1,11 @@
-﻿/**
+/**
  * Core Layer: GameService
- * Application orchestrator for daily run, hardcore combat, boons, upgrades, persistence,
- * locale state, and tutorial state.
- *
- * Architecture decisions:
- * - UI reads only from getCurrentState()/mutation return payloads.
- * - All persistence stays behind repository abstraction.
- * - Domain entities remain UI/storage agnostic.
+ * Central application orchestrator:
+ * - daily run lifecycle
+ * - hardcore combat loop
+ * - campaign/debt progression
+ * - integrity/impulse/redemption systems
+ * - deck + cosmetics
  */
 import { Boss } from "../domain/Boss.js";
 import { BossTier } from "../domain/BossTier.js";
@@ -23,8 +22,14 @@ export class GameService {
   #boonService;
   #progressionService;
   #hardcoreCombatService;
-  #streakService;
   #localizationService;
+  #streakService;
+  #campaignManager;
+  #cardService;
+  #impulseManager;
+  #integrityService;
+  #redemptionService;
+  #cosmeticService;
 
   #bossName = "";
   #bossTiers = [];
@@ -38,6 +43,15 @@ export class GameService {
   #sigilProgress = null;
   #bossTier = null;
   #boss = null;
+
+  #campaignState = null;
+  #deckState = null;
+  #integrityValue = 70;
+  #impulseHistory = [];
+  #redemptionTracker = null;
+  #cosmeticState = null;
+  #currentCampaign = null;
+  #campaignBossProfile = null;
 
   #locale = "en";
   #tutorialCompleted = false;
@@ -54,6 +68,12 @@ export class GameService {
     progressionService,
     hardcoreCombatService,
     localizationService,
+    campaignManager,
+    cardService,
+    impulseManager,
+    integrityService,
+    redemptionService,
+    cosmeticService,
     streakService = new StreakService(),
   }) {
     if (!repository) throw new Error("GameService requires repository.");
@@ -64,6 +84,12 @@ export class GameService {
     if (!progressionService) throw new Error("GameService requires progressionService.");
     if (!hardcoreCombatService) throw new Error("GameService requires hardcoreCombatService.");
     if (!localizationService) throw new Error("GameService requires localizationService.");
+    if (!campaignManager) throw new Error("GameService requires campaignManager.");
+    if (!cardService) throw new Error("GameService requires cardService.");
+    if (!impulseManager) throw new Error("GameService requires impulseManager.");
+    if (!integrityService) throw new Error("GameService requires integrityService.");
+    if (!redemptionService) throw new Error("GameService requires redemptionService.");
+    if (!cosmeticService) throw new Error("GameService requires cosmeticService.");
     if (!streakService) throw new Error("GameService requires streakService.");
 
     this.#repository = repository;
@@ -74,6 +100,12 @@ export class GameService {
     this.#progressionService = progressionService;
     this.#hardcoreCombatService = hardcoreCombatService;
     this.#localizationService = localizationService;
+    this.#campaignManager = campaignManager;
+    this.#cardService = cardService;
+    this.#impulseManager = impulseManager;
+    this.#integrityService = integrityService;
+    this.#redemptionService = redemptionService;
+    this.#cosmeticService = cosmeticService;
     this.#streakService = streakService;
   }
 
@@ -90,6 +122,7 @@ export class GameService {
 
     const stored = await this.#repository.load();
     const migrated = this.#migrateStoredState(stored);
+    const todayDateStamp = StreakService.toDateStamp(new Date());
 
     this.#locale = this.#localizationService.resolveLocale(migrated.settings.locale);
     this.#tutorialCompleted = Boolean(migrated.settings.tutorialCompleted);
@@ -110,12 +143,43 @@ export class GameService {
       fullRevealAtTier: this.#sigilConfig.fullRevealAtTier,
     });
 
-    const todayDateStamp = StreakService.toDateStamp(new Date());
+    this.#campaignState = this.#campaignManager.createState(migrated.campaignState);
+    this.#deckState = this.#cardService.createState(migrated.deckState);
+    this.#integrityValue = this.#integrityService.createValue(migrated.integrity);
+    this.#impulseHistory = this.#impulseManager.createHistory(migrated.impulseHistory);
+    this.#redemptionTracker = this.#redemptionService.createTracker(migrated.redemptionTracker);
+    this.#cosmeticState = this.#cosmeticService.createState(migrated.cosmeticInventory);
+
+    this.#campaignState.impulseHpBurden = Math.max(
+      this.#campaignState.impulseHpBurden,
+      this.#impulseManager.getOutstandingHpBurden(this.#impulseHistory),
+    );
+
+    this.#syncCampaignContext();
+
+    const storedRun = migrated.run;
+    if (storedRun && typeof storedRun === "object" && storedRun.dateStamp && storedRun.dateStamp !== todayDateStamp) {
+      this.#processClosedDay(storedRun, todayDateStamp);
+    }
+
     const tierOneHp = this.#effectiveHpForTierLevel(1);
-    const runInit = this.#dailyRunService.createOrResumeRun(migrated.run, todayDateStamp, tierOneHp);
+    const runInit = this.#dailyRunService.createOrResumeRun(storedRun, todayDateStamp, tierOneHp);
     this.#runState = runInit.run;
     this.#runState.activeBoons = this.#boonService.hydrateBoons(this.#runState.activeBoons);
     this.#runState.boonOffer = this.#boonService.hydrateBoons(this.#runState.boonOffer);
+
+    if (runInit.didReset) {
+      this.#cardService.resetForNewDay(this.#deckState);
+      this.#runState.activeBoons = [];
+      this.#runState.boonOffer = [];
+      this.#runState.phase = 1;
+      this.#runState.ragePercent = 0;
+      this.#runState.corruptionPercent = this.#hardcoreCombatService.clampCorruption(this.#campaignState.corruptionBurden);
+      this.#runState.impulseResistanceAdd = 0;
+      this.#runState.campaignId = this.#currentCampaign.id;
+      this.#runState.hadImpulseToday = false;
+      this.#runState.deepWorkActions = 0;
+    }
 
     this.#syncBossFromRun();
     this.#isInitialized = true;
@@ -185,10 +249,20 @@ export class GameService {
     const streakState = streakUpdate.state;
 
     const boonProfile = this.#boonService.getCombatProfile(this.#runState.activeBoons, actionType);
+    const cardProfile = this.#cardService.getCombatProfile(this.#deckState, actionType);
+    const integrityProfile = this.#integrityService.getCombatProfile(this.#integrityValue);
+    const campaignCombat = this.#campaignBossProfile.combatModifier || {};
+
     const comboBreakHours = this.#hardcoreCombatService.getEffectiveComboBreakHours(boonProfile);
     const comboBroken = this.#isComboBroken(now, comboBreakHours);
     if (comboBroken) {
       this.#runState.comboCount = 0;
+      this.#runState.comboBreaksCount += 1;
+      const previousIntegrity = this.#integrityValue;
+      this.#integrityValue = this.#integrityService.applyComboBreakPenalty(this.#integrityValue, 1);
+      if (this.#integrityValue !== previousIntegrity) {
+        events.push({ type: "INTEGRITY_CHANGED", value: this.#integrityValue });
+      }
       events.push({ type: "COMBO_BROKEN", breakGapHours: comboBreakHours });
     }
 
@@ -207,11 +281,15 @@ export class GameService {
       });
     }
 
+    const campaignRageMultiplier = Number.isFinite(campaignCombat.rageGainMultiplier) ? campaignCombat.rageGainMultiplier : 1;
     const rageGain = this.#hardcoreCombatService.calculateRageGain({
       phase: this.#runState.phase,
       comboBroken,
       repeatedPenalty,
-      rageGainMultiplierAdd: boonProfile.rageGainMultiplierAdd,
+      rageGainMultiplierAdd:
+        boonProfile.rageGainMultiplierAdd +
+        cardProfile.rageGainMultiplierAdd +
+        Math.max(0, campaignRageMultiplier - 1),
     });
     if (rageGain > 0) {
       this.#runState.ragePercent = this.#hardcoreCombatService.clampRage(this.#runState.ragePercent + rageGain);
@@ -246,18 +324,30 @@ export class GameService {
       isFirstHitOfRun,
       actionType,
     });
-    const boonRaw = boonProfile.damageRawAdd + boonProfile.actionTypeDamageRawAdd;
+    const runBuffRaw =
+      boonProfile.damageRawAdd +
+      boonProfile.actionTypeDamageRawAdd +
+      cardProfile.damageRawAdd +
+      cardProfile.actionTypeDamageRawAdd +
+      integrityProfile.damageRawAdd +
+      (Number.isFinite(campaignCombat.damageRawAdd) ? campaignCombat.damageRawAdd : 0);
 
     let finalDamage = this.#progressionService.calculateFinalDamage({
       baseDamage,
       permanentRaw,
       streakRaw,
       upgradeRaw,
-      runBuffRaw: boonRaw,
+      runBuffRaw,
     });
 
     const critConfig = this.#hardcoreCombatService.getBaseCrit();
-    const critChance = Math.max(0, Math.min(0.95, critConfig.chance + boonProfile.critChanceAdd));
+    const critChance = Math.max(
+      0,
+      Math.min(
+        0.95,
+        critConfig.chance + boonProfile.critChanceAdd + cardProfile.critChanceAdd + integrityProfile.critChanceAdd,
+      ),
+    );
     const critMultiplier = Math.max(1, critConfig.multiplier + boonProfile.critMultiplierAdd);
     const isCrit = Math.random() < critChance;
     if (isCrit) {
@@ -269,9 +359,31 @@ export class GameService {
       finalDamage = Math.floor(finalDamage * (1 - penalty));
     }
 
-    const resistanceRate = this.#hardcoreCombatService.getCorruptionResistance(this.#runState.corruptionPercent);
-    finalDamage = Math.max(0, Math.floor(finalDamage * (1 - resistanceRate)));
+    if (cardProfile.corruptionAdd > 0) {
+      this.#runState.corruptionPercent = this.#hardcoreCombatService.clampCorruption(
+        this.#runState.corruptionPercent + cardProfile.corruptionAdd,
+      );
+      this.#campaignState.corruptionBurden = this.#hardcoreCombatService.clampCorruption(
+        this.#campaignState.corruptionBurden + cardProfile.corruptionAdd * 0.15,
+      );
+    }
 
+    const baseResistance = this.#hardcoreCombatService.getCorruptionResistance(this.#runState.corruptionPercent);
+    const impulseResistance = Number.isFinite(this.#runState.impulseResistanceAdd) ? this.#runState.impulseResistanceAdd : 0;
+    const campaignResistance = Number.isFinite(campaignCombat.resistanceAdd) ? campaignCombat.resistanceAdd : 0;
+    const resistanceRate = Math.max(
+      0,
+      Math.min(
+        0.95,
+        baseResistance +
+          Math.max(0, impulseResistance) +
+          Math.max(0, cardProfile.resistanceAdd) +
+          Math.max(0, campaignResistance) -
+          integrityProfile.resistanceReduction,
+      ),
+    );
+
+    finalDamage = Math.max(0, Math.floor(finalDamage * (1 - resistanceRate)));
     const hitResult = this.#boss.takeDamage(finalDamage);
 
     this.#runState.actionsCount += 1;
@@ -280,8 +392,16 @@ export class GameService {
     this.#runState.bossCurrentHp = this.#boss.currentHp;
     this.#runState.lastActionAt = nowIso;
     this.#runState.lastActionType = actionType;
+    if (actionType === "DEEP_WORK") {
+      this.#runState.deepWorkActions += 1;
+      const previousIntegrity = this.#integrityValue;
+      this.#integrityValue = this.#integrityService.applyDeepWorkReward(this.#integrityValue);
+      if (this.#integrityValue !== previousIntegrity) {
+        events.push({ type: "INTEGRITY_CHANGED", value: this.#integrityValue });
+      }
+    }
 
-    const xpRawBonus = this.#upgradeService.getXpRawBonus(this.#upgradeTree) + boonProfile.xpRawAdd;
+    const xpRawBonus = this.#upgradeService.getXpRawBonus(this.#upgradeTree) + boonProfile.xpRawAdd + cardProfile.xpRawAdd;
     const xpFromDamage = this.#progressionService.calculateXpFromDamage(hitResult.appliedDamage, xpRawBonus);
     const xpGrant = this.#progressionService.grantXp(this.#player, xpFromDamage);
 
@@ -341,17 +461,16 @@ export class GameService {
 
     const corruptionDelta = Number.isFinite(result.chosenBoon.corruptionDelta) ? result.chosenBoon.corruptionDelta : 0;
     this.#runState.corruptionPercent = this.#hardcoreCombatService.clampCorruption(this.#runState.corruptionPercent + corruptionDelta);
+    this.#campaignState.corruptionBurden = this.#hardcoreCombatService.clampCorruption(
+      this.#campaignState.corruptionBurden + corruptionDelta * 0.4,
+    );
 
-    const previousTotalHp = this.#boss.totalHp;
-    const previousCurrentHp = this.#boss.currentHp;
-    const recalculatedTotalHp = this.#effectiveHpForTierLevel(this.#bossTier.tierLevel);
-    if (recalculatedTotalHp !== previousTotalHp) {
-      const remainingRatio = previousTotalHp > 0 ? previousCurrentHp / previousTotalHp : 1;
-      const recalculatedCurrentHp = Math.max(1, Math.floor(recalculatedTotalHp * remainingRatio));
-      this.#boss = new Boss(this.#bossName, recalculatedTotalHp, recalculatedCurrentHp);
-      this.#runState.bossCurrentHp = recalculatedCurrentHp;
-      events.push({ type: "BOSS_RECALIBRATED", newTotalHp: recalculatedTotalHp });
+    const drawnRunCard = this.#cardService.drawRandomRunCard(this.#deckState);
+    if (drawnRunCard) {
+      events.push({ type: "RUN_CARD_DRAWN", card: drawnRunCard });
     }
+
+    this.#recalibrateBossKeepingRatio(events);
 
     events.push({
       type: "BOON_CHOSEN",
@@ -382,16 +501,7 @@ export class GameService {
       });
     }
 
-    const previousTotalHp = this.#boss.totalHp;
-    const previousCurrentHp = this.#boss.currentHp;
-    const recalculatedTotalHp = this.#effectiveHpForTierLevel(this.#bossTier.tierLevel);
-    if (recalculatedTotalHp !== previousTotalHp) {
-      const remainingRatio = previousTotalHp > 0 ? previousCurrentHp / previousTotalHp : 1;
-      const recalculatedCurrentHp = Math.max(1, Math.floor(recalculatedTotalHp * remainingRatio));
-      this.#boss = new Boss(this.#bossName, recalculatedTotalHp, recalculatedCurrentHp);
-      this.#runState.bossCurrentHp = recalculatedCurrentHp;
-      events.push({ type: "BOSS_RECALIBRATED", newTotalHp: recalculatedTotalHp });
-    }
+    this.#recalibrateBossKeepingRatio(events);
 
     events.push(...purchase.events);
     events.push({ type: "SIGIL_GOLD_GLOW" });
@@ -399,6 +509,158 @@ export class GameService {
     await this.#persist();
     return {
       events,
+      state: this.getCurrentState(),
+    };
+  }
+
+  async logDebtPayment(amount) {
+    this.#ensureInitialized();
+    const events = this.#rolloverIfNeeded();
+
+    const value = Number.isFinite(amount) ? Math.floor(amount) : 0;
+    if (value <= 0) throw new Error("Debt payment amount must be > 0.");
+
+    const previousIntegrity = this.#integrityValue;
+    const result = this.#campaignManager.applyDebtPayment(this.#campaignState, value);
+    this.#integrityValue = this.#integrityService.applyDebtPaymentReward(this.#integrityValue, result.appliedAmount);
+
+    this.#syncCampaignContext();
+    this.#runState.campaignId = this.#currentCampaign.id;
+    if (result.campaignChanged) {
+      events.push({
+        type: "CAMPAIGN_ADVANCED",
+        campaignId: this.#currentCampaign.id,
+      });
+    }
+    if (this.#campaignState.currentDebt <= 0) {
+      events.push({ type: "FINAL_CAMPAIGN_UNLOCKED" });
+    }
+
+    if (this.#integrityValue !== previousIntegrity) {
+      events.push({ type: "INTEGRITY_CHANGED", value: this.#integrityValue });
+    }
+
+    events.push({
+      type: "DEBT_PAYMENT_LOGGED",
+      amount: result.appliedAmount,
+      currentDebt: this.#campaignState.currentDebt,
+    });
+
+    this.#recalibrateBossKeepingRatio(events);
+    await this.#persist();
+    return {
+      events,
+      state: this.getCurrentState(),
+    };
+  }
+
+  async logImpulse(amount, note = "") {
+    this.#ensureInitialized();
+    const events = this.#rolloverIfNeeded();
+
+    const value = Number.isFinite(amount) ? amount : 0;
+    if (value <= 0) throw new Error("Impulse amount must be > 0.");
+
+    const previousIntegrity = this.#integrityValue;
+    const nowIso = new Date().toISOString();
+    const impact = this.#impulseManager.logImpulse(this.#impulseHistory, {
+      amount: value,
+      nowIso,
+      note,
+    });
+
+    this.#campaignState.impulseHpBurden += impact.hpIncrease;
+    this.#campaignState.corruptionBurden = this.#hardcoreCombatService.clampCorruption(
+      this.#campaignState.corruptionBurden + impact.corruptionIncrease * 0.6,
+    );
+    this.#runState.corruptionPercent = this.#hardcoreCombatService.clampCorruption(
+      this.#runState.corruptionPercent + impact.corruptionIncrease,
+    );
+    this.#runState.impulseResistanceAdd = Math.max(0, this.#runState.impulseResistanceAdd + impact.resistanceAdd);
+    this.#runState.hadImpulseToday = true;
+
+    this.#integrityValue = this.#integrityService.applyImpulsePenalty(this.#integrityValue, value);
+    if (this.#integrityValue !== previousIntegrity) {
+      events.push({ type: "INTEGRITY_CHANGED", value: this.#integrityValue });
+    }
+
+    const newTotalHp = this.#boss.totalHp + impact.hpIncrease;
+    const newCurrentHp = this.#boss.currentHp + impact.hpIncrease;
+    this.#boss = new Boss(this.#bossName, newTotalHp, newCurrentHp);
+    this.#runState.bossCurrentHp = this.#boss.currentHp;
+
+    events.push({
+      type: "IMPULSE_LOGGED",
+      amount: value,
+      hpIncrease: impact.hpIncrease,
+      corruptionIncrease: impact.corruptionIncrease,
+      integrity: this.#integrityValue,
+    });
+
+    await this.#persist();
+    return {
+      events,
+      state: this.getCurrentState(),
+    };
+  }
+
+  async redeemImpulse(impulseId, amount) {
+    this.#ensureInitialized();
+    const events = this.#rolloverIfNeeded();
+
+    const redeemed = this.#impulseManager.redeemImpulse(this.#impulseHistory, impulseId, amount);
+    this.#campaignState.impulseHpBurden = Math.max(0, this.#campaignState.impulseHpBurden - redeemed.hpBurdenReduction);
+    this.#recalibrateBossKeepingRatio(events);
+
+    events.push({
+      type: "IMPULSE_REDEEMED",
+      impulseId,
+      amount: redeemed.redeemedAmount,
+      hpBurdenReduction: redeemed.hpBurdenReduction,
+    });
+
+    await this.#persist();
+    return {
+      events,
+      state: this.getCurrentState(),
+    };
+  }
+
+  async setActiveDeckCards(cardIds) {
+    this.#ensureInitialized();
+    const events = this.#rolloverIfNeeded();
+
+    const active = this.#cardService.setActiveCards(this.#deckState, cardIds);
+    events.push({ type: "DECK_UPDATED", activeCardIds: active });
+
+    await this.#persist();
+    return {
+      events,
+      state: this.getCurrentState(),
+    };
+  }
+
+  async claimDailySummon() {
+    this.#ensureInitialized();
+    const events = this.#rolloverIfNeeded();
+    const todayDateStamp = StreakService.toDateStamp(new Date());
+
+    const item = this.#cosmeticService.summonFree(this.#cosmeticState, todayDateStamp);
+    events.push({ type: "COSMETIC_SUMMONED", item });
+
+    await this.#persist();
+    return {
+      events,
+      state: this.getCurrentState(),
+    };
+  }
+
+  async equipCosmetic(itemId) {
+    this.#ensureInitialized();
+    const item = this.#cosmeticService.equip(this.#cosmeticState, itemId);
+    await this.#persist();
+    return {
+      events: [{ type: "COSMETIC_EQUIPPED", item }],
       state: this.getCurrentState(),
     };
   }
@@ -420,15 +682,36 @@ export class GameService {
     const actionText = bundle.actions || {};
     const upgradePathLabels = bundle.upgradePaths || {};
 
+    const campaignText = bundle.campaignPanel || {};
+    const integrityText = bundle.integrityPanel || {};
+    const impulseText = bundle.impulsePanel || {};
+    const redemptionText = bundle.redemptionPanel || {};
+    const cosmeticText = bundle.cosmeticPanel || {};
+    const deckText = bundle.deckPanel || {};
+    const financeText = bundle.finance || {};
+
     const bossRemaining = this.#boss.getRemainingHp();
     const hpPercent = this.#boss.getHpPercentage();
     const xpToNext = this.#progressionService.getXpToNextLevel(this.#player.level);
     const xpPercent = xpToNext > 0 ? Math.max(0, Math.min(100, (this.#player.xp / xpToNext) * 100)) : 0;
     const streak = this.#streakService.getState();
+    const todayDateStamp = StreakService.toDateStamp(new Date());
 
     const awaitingBoonChoice = this.#isAwaitingBoonChoice();
     const isFailed = this.#runState.status === "FAILED";
-    const resistanceRate = this.#hardcoreCombatService.getCorruptionResistance(this.#runState.corruptionPercent);
+    const campaignModifier = this.#campaignBossProfile.combatModifier || {};
+    const baseResistance = this.#hardcoreCombatService.getCorruptionResistance(this.#runState.corruptionPercent);
+    const integrityProfile = this.#integrityService.getCombatProfile(this.#integrityValue);
+    const resistanceRate = Math.max(
+      0,
+      Math.min(
+        0.95,
+        baseResistance +
+          (Number.isFinite(this.#runState.impulseResistanceAdd) ? this.#runState.impulseResistanceAdd : 0) +
+          (Number.isFinite(campaignModifier.resistanceAdd) ? campaignModifier.resistanceAdd : 0) -
+          integrityProfile.resistanceReduction,
+      ),
+    );
     const sigilVm = this.#sigilProgress.toViewModel(hpPercent, this.#runState.ragePercent);
 
     const statusText = isFailed
@@ -447,8 +730,26 @@ export class GameService {
       label: upgradePathLabels[pathVm.pathId] || pathVm.label,
     }));
 
+    const campaignVm = this.#campaignManager.toViewModel(this.#campaignState);
+    const integrityVm = this.#integrityService.toViewModel(this.#integrityValue);
+    const redemptionVm = this.#redemptionService.toViewModel(this.#redemptionTracker);
+    const cosmeticVm = this.#cosmeticService.toViewModel(this.#cosmeticState, todayDateStamp);
+    const deckCardsVm = this.#cardService.getCardsViewModel(this.#deckState);
+
+    const impulseHistoryVm = this.#impulseHistory
+      .slice(-8)
+      .map((entry) => ({
+        id: entry.id,
+        amount: Math.round(entry.amount),
+        redeemedAmount: Math.round(entry.redeemedAmount || 0),
+        remainingAmount: Math.max(0, Math.round(entry.amount - (entry.redeemedAmount || 0))),
+        createdAt: entry.createdAt,
+        note: entry.note || "",
+      }))
+      .reverse();
+
     return {
-      schemaVersion: 5,
+      schemaVersion: 6,
       updatedAt: new Date().toISOString(),
       settings: {
         locale: this.#locale,
@@ -457,7 +758,7 @@ export class GameService {
       },
       boss: {
         ...this.#boss.toJSON(),
-        name: typeof bossText.name === "string" && bossText.name.length > 0 ? bossText.name : this.#boss.name,
+        name: this.#bossName,
         hpRemaining: bossRemaining,
         hpRemainingPercent: hpPercent,
         hpClearedPercent: Math.max(0, 100 - hpPercent),
@@ -468,6 +769,12 @@ export class GameService {
         resistanceRate,
         resistancePercent: Math.round(resistanceRate * 100),
         sigil: sigilVm,
+        bossType: this.#campaignBossProfile.bossType,
+      },
+      currentCampaignBoss: {
+        type: this.#campaignBossProfile.bossType,
+        name: this.#campaignBossProfile.bossName,
+        visualTheme: this.#campaignBossProfile.visualTheme,
       },
       player: {
         ...this.#player.toJSON(),
@@ -491,7 +798,32 @@ export class GameService {
         awaitingBoonChoice,
         activeBoons: this.#runState.activeBoons.map((boon) => boon.toJSON()),
         boonOffer: this.#runState.boonOffer.map((boon) => boon.toJSON()),
+        impulseResistanceAdd: this.#runState.impulseResistanceAdd,
+        campaignId: this.#runState.campaignId,
       },
+      campaignState: {
+        ...this.#campaignState,
+        currentCampaignId: campaignVm.id,
+      },
+      deckState: {
+        ...this.#deckState,
+      },
+      integrity: integrityVm,
+      impulseHistory: impulseHistoryVm,
+      cosmeticInventory: {
+        ...this.#cosmeticState,
+      },
+      redemptionTracker: {
+        ...this.#redemptionTracker,
+      },
+      campaign: campaignVm,
+      deck: {
+        activeSlots: this.#deckState.activeSlots,
+        maxPoolSize: this.#deckState.maxPoolSize,
+        cards: deckCardsVm,
+      },
+      redemption: redemptionVm,
+      cosmetics: cosmeticVm,
       sigilProgress: this.#sigilProgress.toJSON(),
       upgrades: {
         paths: localizedPaths,
@@ -513,6 +845,13 @@ export class GameService {
         statusPanel: statusPanelText,
         boons: boonText,
         actions: actionText,
+        campaignPanel: campaignText,
+        integrityPanel: integrityText,
+        impulsePanel: impulseText,
+        redemptionPanel: redemptionText,
+        cosmeticPanel: cosmeticText,
+        deckPanel: deckText,
+        finance: financeText,
         tutorial: {
           title: tutorialText.title || "Tutorial",
           replay: tutorialText.replay || "Replay Tutorial",
@@ -537,7 +876,6 @@ export class GameService {
 
     const previousMaxTier = this.#sigilProgress.maxTierCleared;
     this.#sigilProgress.recordTierClear(tier);
-
     events.push({ type: "BOSS_DEFEATED", tierLevel: tier });
 
     const defeatXp = this.#progressionService.calculateBossDefeatXp(tier, xpRawBonus);
@@ -551,6 +889,20 @@ export class GameService {
       amount: shards,
       totalShards: this.#currency.shards,
     });
+
+    const runCard = this.#cardService.drawRandomRunCard(this.#deckState);
+    if (runCard) {
+      events.push({ type: "RUN_CARD_DRAWN", card: runCard });
+    }
+
+    if (this.#currentCampaign.isFinal && !this.#campaignState.trueEndingCompleted) {
+      this.#campaignState.trueEndingCompleted = true;
+      this.#campaignState.prestigeUnlocked = true;
+      events.push({
+        type: "TRUE_ENDING_COMPLETED",
+        message: "DEBT ERASED - THE RITUAL IS COMPLETE",
+      });
+    }
 
     const nextTierLevel = tier + 1;
     this.#bossTier = this.#createBossTier(nextTierLevel);
@@ -611,21 +963,78 @@ export class GameService {
     const todayDateStamp = StreakService.toDateStamp(new Date());
     if (this.#runState.dateStamp === todayDateStamp) return [];
 
+    const events = this.#processClosedDay(this.#runState, todayDateStamp);
+
     const tierOneHp = this.#effectiveHpForTierLevel(1);
     this.#runState = this.#dailyRunService.resetForNewDay(this.#runState, todayDateStamp, tierOneHp);
+    this.#cardService.resetForNewDay(this.#deckState);
+
     this.#runState.activeBoons = [];
     this.#runState.boonOffer = [];
     this.#runState.phase = 1;
     this.#runState.ragePercent = 0;
-    this.#runState.corruptionPercent = 0;
+    this.#runState.corruptionPercent = this.#hardcoreCombatService.clampCorruption(this.#campaignState.corruptionBurden);
+    this.#runState.impulseResistanceAdd = 0;
+    this.#runState.campaignId = this.#currentCampaign.id;
+    this.#runState.hadImpulseToday = false;
+    this.#runState.deepWorkActions = 0;
 
     this.#bossTier = this.#createBossTier(1);
     this.#boss = new Boss(this.#bossName, tierOneHp, tierOneHp);
 
-    return [{ type: "RUN_RESET", dateStamp: todayDateStamp, runNumber: this.#runState.runNumber }];
+    events.push({ type: "RUN_RESET", dateStamp: todayDateStamp, runNumber: this.#runState.runNumber });
+    return events;
+  }
+
+  #processClosedDay(previousRun, todayDateStamp) {
+    const events = [];
+    if (!previousRun || typeof previousRun !== "object" || typeof previousRun.dateStamp !== "string") {
+      return events;
+    }
+
+    const hadAction = Number.isFinite(previousRun.actionsCount) && previousRun.actionsCount > 0;
+    const redemption = this.#redemptionService.progressForDay(this.#redemptionTracker, {
+      dateStamp: previousRun.dateStamp,
+      hadAction,
+    });
+
+    const previousIntegrity = this.#integrityValue;
+    this.#integrityValue = this.#integrityService.applyNoActionPenalty(this.#integrityValue, this.#redemptionTracker.noActionDays);
+    const noImpulseDays = this.#impulseManager.getNoImpulseDays(this.#impulseHistory, todayDateStamp);
+    this.#integrityValue = this.#integrityService.applyNoImpulseReward(this.#integrityValue, noImpulseDays);
+
+    if (Number.isFinite(previousRun.deepWorkActions) && previousRun.deepWorkActions > 0) {
+      this.#integrityValue = this.#integrityService.applyDeepWorkReward(this.#integrityValue);
+    }
+
+    if (this.#integrityValue !== previousIntegrity) {
+      events.push({ type: "INTEGRITY_CHANGED", value: this.#integrityValue });
+    }
+
+    if (redemption.triggered) {
+      const effects = redemption.effects;
+      const hpRecovery = Math.floor(this.#campaignState.impulseHpBurden * effects.impulseHpRecoveryRate);
+      this.#campaignState.impulseHpBurden = Math.max(0, this.#campaignState.impulseHpBurden - hpRecovery);
+      this.#campaignState.corruptionBurden = this.#hardcoreCombatService.clampCorruption(
+        this.#campaignState.corruptionBurden - effects.corruptionReduction,
+      );
+      this.#integrityValue = this.#integrityService.applyRedemptionReward(this.#integrityValue, effects.integrityGain);
+
+      events.push({
+        type: "REDEMPTION_TRIGGERED",
+        hpRecovery,
+        corruptionReduction: effects.corruptionReduction,
+        integrityGain: effects.integrityGain,
+      });
+    }
+
+    return events;
   }
 
   #syncBossFromRun() {
+    this.#syncCampaignContext();
+    this.#runState.campaignId = this.#currentCampaign.id;
+
     this.#bossTier = this.#createBossTier(this.#runState.bossTierLevel);
     const effectiveHp = this.#effectiveHpForTierLevel(this.#bossTier.tierLevel);
     const currentHp = Math.max(1, Math.min(effectiveHp, this.#runState.bossCurrentHp));
@@ -636,6 +1045,28 @@ export class GameService {
     this.#runState.ragePercent = this.#hardcoreCombatService.clampRage(this.#runState.ragePercent);
     this.#runState.corruptionPercent = this.#hardcoreCombatService.clampCorruption(this.#runState.corruptionPercent);
     this.#runState.phase = this.#hardcoreCombatService.getPhaseByHpPercent(this.#boss.getHpPercentage());
+  }
+
+  #syncCampaignContext() {
+    const transition = this.#campaignManager.syncActiveCampaign(this.#campaignState);
+    this.#currentCampaign = transition.campaign;
+    this.#campaignBossProfile = this.#campaignManager.getBossProfile(this.#currentCampaign);
+    this.#bossName = this.#campaignBossProfile.bossName;
+  }
+
+  #recalibrateBossKeepingRatio(events) {
+    const previousTotalHp = this.#boss.totalHp;
+    const previousCurrentHp = this.#boss.currentHp;
+    const recalculatedTotalHp = this.#effectiveHpForTierLevel(this.#bossTier.tierLevel);
+    if (recalculatedTotalHp !== previousTotalHp) {
+      const remainingRatio = previousTotalHp > 0 ? previousCurrentHp / previousTotalHp : 1;
+      const recalculatedCurrentHp = Math.max(1, Math.floor(recalculatedTotalHp * remainingRatio));
+      this.#boss = new Boss(this.#bossName, recalculatedTotalHp, recalculatedCurrentHp);
+      this.#runState.bossCurrentHp = recalculatedCurrentHp;
+      if (Array.isArray(events)) {
+        events.push({ type: "BOSS_RECALIBRATED", newTotalHp: recalculatedTotalHp });
+      }
+    }
   }
 
   #createBossTier(tierLevel) {
@@ -656,12 +1087,20 @@ export class GameService {
       ? this.#player.permanentBossHpReduction
       : 0;
     const totalReduction = Math.max(0, Math.min(0.95, upgradeReduction + permanentReduction));
-    return tier.getEffectiveHp(totalReduction);
+
+    const campaignHpMultiplier = Number.isFinite(this.#campaignBossProfile?.combatModifier?.bossHpMultiplier)
+      ? this.#campaignBossProfile.combatModifier.bossHpMultiplier
+      : 1;
+    const impulseBurden = Number.isFinite(this.#campaignState?.impulseHpBurden) ? this.#campaignState.impulseHpBurden : 0;
+
+    const reduced = tier.getEffectiveHp(totalReduction);
+    const campaignScaled = Math.max(1, Math.floor(reduced * campaignHpMultiplier));
+    return Math.max(1, campaignScaled + Math.floor(Math.max(0, impulseBurden)));
   }
 
   async #persist() {
     await this.#repository.save({
-      schemaVersion: 5,
+      schemaVersion: 6,
       settings: {
         locale: this.#locale,
         tutorialCompleted: this.#tutorialCompleted,
@@ -673,6 +1112,12 @@ export class GameService {
       upgrades: {
         ranks: this.#upgradeTree.toRankState(),
       },
+      campaignState: { ...this.#campaignState },
+      deckState: { ...this.#deckState },
+      integrity: this.#integrityValue,
+      impulseHistory: this.#impulseHistory.map((entry) => ({ ...entry })),
+      cosmeticInventory: { ...this.#cosmeticState },
+      redemptionTracker: { ...this.#redemptionTracker },
       run: {
         dateStamp: this.#runState.dateStamp,
         runNumber: this.#runState.runNumber,
@@ -689,6 +1134,11 @@ export class GameService {
         lastActionAt: this.#runState.lastActionAt,
         lastActionType: this.#runState.lastActionType,
         repeatedActionCount: this.#runState.repeatedActionCount,
+        comboBreaksCount: this.#runState.comboBreaksCount,
+        impulseResistanceAdd: this.#runState.impulseResistanceAdd,
+        campaignId: this.#runState.campaignId,
+        deepWorkActions: this.#runState.deepWorkActions,
+        hadImpulseToday: this.#runState.hadImpulseToday,
         activeBoons: this.#runState.activeBoons.map((boon) => boon.toJSON()),
         boonOffer: this.#runState.boonOffer.map((boon) => boon.toJSON()),
       },
@@ -719,6 +1169,7 @@ export class GameService {
   #migrateStoredState(stored) {
     const todayDateStamp = StreakService.toDateStamp(new Date());
 
+    const debtConfig = this.#actionConfigService.getDebtConfig();
     const defaults = {
       settings: {
         locale: "en",
@@ -734,6 +1185,35 @@ export class GameService {
       currency: { shards: 0 },
       streak: { dailyStreak: 0, lastActionDate: null },
       sigilProgress: { maxTierCleared: 0 },
+      campaignState: {
+        totalDebt: debtConfig.totalDebt,
+        currentDebt: debtConfig.startingDebt,
+        totalPaid: 0,
+        impulseHpBurden: 0,
+        corruptionBurden: 0,
+        activeCampaignId: "",
+        trueEndingCompleted: false,
+        prestigeUnlocked: false,
+      },
+      deckState: {
+        poolCardIds: [],
+        activeCardIds: [],
+        runCardIds: [],
+      },
+      integrity: this.#integrityService.createValue(),
+      impulseHistory: [],
+      cosmeticInventory: {
+        ownedIds: [],
+        equipped: { warrior: "", weapon: "", aura: "", damage: "" },
+        lastFreeSummonDate: "",
+        recentPullId: "",
+      },
+      redemptionTracker: {
+        consistencyDays: 0,
+        totalRedemptions: 0,
+        lastProcessedDate: "",
+        noActionDays: 0,
+      },
       upgradeRanks: {},
       run: {
         dateStamp: todayDateStamp,
@@ -751,6 +1231,11 @@ export class GameService {
         lastActionAt: null,
         lastActionType: "",
         repeatedActionCount: 0,
+        comboBreaksCount: 0,
+        impulseResistanceAdd: 0,
+        campaignId: "",
+        deepWorkActions: 0,
+        hadImpulseToday: false,
         activeBoons: [],
         boonOffer: [],
       },
@@ -758,33 +1243,28 @@ export class GameService {
 
     if (!stored || typeof stored !== "object") return defaults;
 
-    if (stored.schemaVersion === 5) {
+    if (stored.schemaVersion === 6) {
       return {
         settings: stored.settings || defaults.settings,
         player: stored.player || defaults.player,
         currency: stored.currency || defaults.currency,
         streak: stored.streak || defaults.streak,
         sigilProgress: stored.sigilProgress || defaults.sigilProgress,
+        campaignState: stored.campaignState || defaults.campaignState,
+        deckState: stored.deckState || defaults.deckState,
+        integrity: Number.isFinite(stored.integrity) ? stored.integrity : defaults.integrity,
+        impulseHistory: Array.isArray(stored.impulseHistory) ? stored.impulseHistory : defaults.impulseHistory,
+        cosmeticInventory: stored.cosmeticInventory || defaults.cosmeticInventory,
+        redemptionTracker: stored.redemptionTracker || defaults.redemptionTracker,
         upgradeRanks: stored.upgrades && typeof stored.upgrades === "object" ? stored.upgrades.ranks || {} : {},
         run: stored.run || defaults.run,
       };
     }
 
-    if (stored.schemaVersion === 4) {
-      return {
-        settings: defaults.settings,
-        player: stored.player || defaults.player,
-        currency: stored.currency || defaults.currency,
-        streak: stored.streak || defaults.streak,
-        sigilProgress: stored.sigilProgress || defaults.sigilProgress,
-        upgradeRanks: stored.upgrades && typeof stored.upgrades === "object" ? stored.upgrades.ranks || {} : {},
-        run: stored.run || defaults.run,
-      };
-    }
-
-    if (stored.schemaVersion === 3) {
+    if (stored.schemaVersion === 5 || stored.schemaVersion === 4 || stored.schemaVersion === 3) {
       const oldPlayer = stored.player && typeof stored.player === "object" ? stored.player : {};
-      const legacyRunBuffs = stored.run && Array.isArray(stored.run.runBuffs) ? stored.run.runBuffs : [];
+      const oldRun = stored.run && typeof stored.run === "object" ? stored.run : {};
+      const legacyRunBuffs = Array.isArray(oldRun.runBuffs) ? oldRun.runBuffs : [];
 
       const migratedBoons = legacyRunBuffs.map((legacy, index) => ({
         id: `legacy-boon-${index}-${Math.random()}`,
@@ -807,39 +1287,50 @@ export class GameService {
       }));
 
       return {
-        settings: defaults.settings,
+        settings: stored.settings || defaults.settings,
         player: {
           level: oldPlayer.level,
           xp: oldPlayer.xp,
           permanentDamageMultiplier: oldPlayer.permanentDamageMultiplier,
-          permanentBossHpReduction: 0,
-          streakGraceCharges: oldPlayer.streakGraceCharges,
+          permanentBossHpReduction: oldPlayer.permanentBossHpReduction || 0,
+          streakGraceCharges: oldPlayer.streakGraceCharges || 0,
         },
         currency: stored.currency || defaults.currency,
         streak: stored.streak || defaults.streak,
-        sigilProgress: defaults.sigilProgress,
+        sigilProgress: stored.sigilProgress || defaults.sigilProgress,
+        campaignState: defaults.campaignState,
+        deckState: defaults.deckState,
+        integrity: defaults.integrity,
+        impulseHistory: defaults.impulseHistory,
+        cosmeticInventory: defaults.cosmeticInventory,
+        redemptionTracker: defaults.redemptionTracker,
         upgradeRanks: stored.upgrades && typeof stored.upgrades === "object" ? stored.upgrades.ranks || {} : {},
         run: {
-          dateStamp: stored.run && typeof stored.run.dateStamp === "string" ? stored.run.dateStamp : todayDateStamp,
-          runNumber: stored.run && Number.isFinite(stored.run.runNumber) ? stored.run.runNumber : 1,
-          status: "ACTIVE",
-          failedReason: "",
-          bossTierLevel: stored.run && Number.isFinite(stored.run.bossTierLevel) ? stored.run.bossTierLevel : 1,
-          bossCurrentHp:
-            stored.run && Number.isFinite(stored.run.bossCurrentHp)
-              ? stored.run.bossCurrentHp
-              : this.#bossTiers[0].totalHp,
-          actionsCount: stored.run && Number.isFinite(stored.run.actionsCount) ? stored.run.actionsCount : 0,
-          comboCount: stored.run && Number.isFinite(stored.run.comboCount) ? stored.run.comboCount : 0,
-          firstHitConsumed: Boolean(stored.run && stored.run.firstHitConsumed),
-          ragePercent: 0,
-          corruptionPercent: 0,
-          phase: 1,
-          lastActionAt: null,
-          lastActionType: "",
-          repeatedActionCount: 0,
-          activeBoons: migratedBoons,
-          boonOffer: [],
+          dateStamp: typeof oldRun.dateStamp === "string" ? oldRun.dateStamp : todayDateStamp,
+          runNumber: Number.isFinite(oldRun.runNumber) ? oldRun.runNumber : 1,
+          status: oldRun.status === "FAILED" ? "FAILED" : "ACTIVE",
+          failedReason: typeof oldRun.failedReason === "string" ? oldRun.failedReason : "",
+          bossTierLevel: Number.isFinite(oldRun.bossTierLevel) ? oldRun.bossTierLevel : 1,
+          bossCurrentHp: Number.isFinite(oldRun.bossCurrentHp) ? oldRun.bossCurrentHp : this.#bossTiers[0].totalHp,
+          actionsCount: Number.isFinite(oldRun.actionsCount) ? oldRun.actionsCount : 0,
+          comboCount: Number.isFinite(oldRun.comboCount) ? oldRun.comboCount : 0,
+          firstHitConsumed: Boolean(oldRun.firstHitConsumed),
+          ragePercent: Number.isFinite(oldRun.ragePercent) ? oldRun.ragePercent : 0,
+          corruptionPercent: Number.isFinite(oldRun.corruptionPercent) ? oldRun.corruptionPercent : 0,
+          phase: Number.isFinite(oldRun.phase) ? oldRun.phase : 1,
+          lastActionAt: typeof oldRun.lastActionAt === "string" ? oldRun.lastActionAt : null,
+          lastActionType: typeof oldRun.lastActionType === "string" ? oldRun.lastActionType : "",
+          repeatedActionCount: Number.isFinite(oldRun.repeatedActionCount) ? oldRun.repeatedActionCount : 0,
+          comboBreaksCount: 0,
+          impulseResistanceAdd: 0,
+          campaignId: "",
+          deepWorkActions: 0,
+          hadImpulseToday: false,
+          activeBoons:
+            Array.isArray(oldRun.activeBoons) && oldRun.activeBoons.length > 0
+              ? oldRun.activeBoons
+              : migratedBoons,
+          boonOffer: Array.isArray(oldRun.boonOffer) ? oldRun.boonOffer : [],
         },
       };
     }
